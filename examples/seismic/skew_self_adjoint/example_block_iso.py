@@ -1,4 +1,7 @@
+import socket
 import numpy as np
+from sympy import sqrt
+from mpi4py import MPI
 
 from devito import (Grid, Function, TimeFunction, Eq, Operator)
 from examples.seismic import RickerSource, TimeAxis
@@ -8,8 +11,7 @@ dtype = np.float32
 npad = 20
 qmin = 0.1
 qmax = 1000.0
-tmax = 250.0
-tmax = 3.0
+tmax = 20.0
 fpeak = 0.010
 omega = 2.0 * np.pi * fpeak
 
@@ -26,17 +28,18 @@ b = Function(name='b', grid=grid, space_order=space_order)
 vel0 = Function(name='vel0', grid=grid, space_order=space_order)
 wOverQ = Function(name='wOverQ', grid=vel0.grid, space_order=space_order)
 
-b.data[:] = 1.0
-vel0.data[:] = 1.5
-wOverQ.data[:] = 1.0
+_v = 1.5
+_b = 1.0
+
+b.data[:] = _b
+vel0.data[:] = _v
 
 t0 = 0.0
-t1 = 250.0
+t1 = 20.0
 dt = 1.0
 time_axis = TimeAxis(start=t0, stop=t1, step=dt)
 
 p0 = TimeFunction(name='p0', grid=grid, time_order=2, space_order=space_order)
-m0 = TimeFunction(name='m0', grid=grid, time_order=2, space_order=space_order)
 t, x, y, z = p0.dimensions
 
 src_coords = np.empty((1, len(shape)), dtype=dtype)
@@ -70,15 +73,12 @@ def g3_tilde(field):
     return field.dz(x0=z-z.spacing/2)
 
 
-# works for smaller sizes, seg faults at (1001,1001,501)
-# if you comment out the Y derivatives, works at (1001,1001,501)
 # Time update equation for quasi-P state variable p
 update_p_nl = t.spacing**2 * vel0**2 / b * \
     (g1_tilde(b * g1(p0)) +
      g2_tilde(b * g2(p0)) +
      g3_tilde(b * g3(p0))) + \
-    (2 - t.spacing * wOverQ) * p0 + \
-    (t.spacing * wOverQ - 1) * p0.backward
+    (2 - t.spacing * wOverQ) * p0 + (t.spacing * wOverQ - 1) * p0.backward
 
 stencil_p_nl = Eq(p0.forward, update_p_nl)
 
@@ -95,13 +95,33 @@ def callback(n):
     assert False
     
 op = Operator([stencil_p_nl, src_term],
-              subs=spacing_map, name='OpExampleIso',
+              subs=spacing_map, name='OpExampleIso_blk',
               opt=('advanced', {'cire-repeats-inv': 2, 'cire-mincost-inv': callback}))
 
-# f = open("operator.iso.c", "w")
-# print(op, file=f)
-# f.close()
+filename = "timing_iso.%s.txt" % (socket.gethostname())
+print("filename; ", filename)
 
-bx = 22
-by = 6
-op.apply(x0_blk0_size=bx, y0_blk0_size=by)
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+
+bx1 = 0
+bx2 = 32
+dbx = 1
+by1 = 0
+by2 = 32
+dby = 1
+
+f = open(filename, "w")
+
+for bx in range(bx2, bx1, -dbx):
+    for by in range(by2, by1, -dby):
+        p0.data[:] = 0
+        s = op.apply(x0_blk0_size=bx, y0_blk0_size=by)
+        if rank == 0:
+            gpointss = np.sum([v.gpointss for k, v in s.items()])
+            # gpointss = np.max([v.gpointss for k, v in s.items()])
+            print("bx,by,gpts/s; %3d %3d %10.6f" % (bx, by, gpointss))
+            print("bx,by,gpts/s; %3d %3d %10.6f" % (bx, by, gpointss), file=f)
+            f.flush()
+
+f.close()

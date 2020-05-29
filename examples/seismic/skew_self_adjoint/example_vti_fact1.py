@@ -1,4 +1,5 @@
 import numpy as np
+from sympy import sqrt
 
 from devito import (Grid, Function, TimeFunction, Eq, Operator)
 from examples.seismic import RickerSource, TimeAxis
@@ -9,7 +10,6 @@ npad = 20
 qmin = 0.1
 qmax = 1000.0
 tmax = 250.0
-tmax = 3.0
 fpeak = 0.010
 omega = 2.0 * np.pi * fpeak
 
@@ -23,11 +23,22 @@ extent = tuple([d * (s - 1) for s, d in zip(shape, spacing)])
 grid = Grid(extent=extent, shape=shape, origin=origin, dtype=dtype)
 
 b = Function(name='b', grid=grid, space_order=space_order)
+f = Function(name='f', grid=grid, space_order=space_order)
 vel0 = Function(name='vel0', grid=grid, space_order=space_order)
+eps0 = Function(name='eps0', grid=vel0.grid, space_order=space_order)
+eta0 = Function(name='eta0', grid=vel0.grid, space_order=space_order)
 wOverQ = Function(name='wOverQ', grid=vel0.grid, space_order=space_order)
 
-b.data[:] = 1.0
+_b = 1.0
+_f = 0.84
+_eps = 0.2
+_eta = 0.4
+
+b.data[:] = _b
+f.data[:] = _f
 vel0.data[:] = 1.5
+eps0.data[:] = _eps
+eta0.data[:] = _eta
 wOverQ.data[:] = 1.0
 
 t0 = 0.0
@@ -70,38 +81,50 @@ def g3_tilde(field):
     return field.dz(x0=z-z.spacing/2)
 
 
-# works for smaller sizes, seg faults at (1001,1001,501)
-# if you comment out the Y derivatives, works at (1001,1001,501)
+# Functions  for additional factorization
+b1mf = Function(name='b1mf', grid=grid, space_order=space_order)
+b1m2e = Function(name='b1m2e', grid=grid, space_order=space_order)
+b1mfa2 = Function(name='b1mfa2', grid=grid, space_order=space_order)
+b1mfpfa2 = Function(name='b1mfpfa2', grid=grid, space_order=space_order)
+bfes1ma2 = Function(name='bfes1ma2', grid=grid, space_order=space_order)
+
+# Equations for additional factorization
+eq_b1mf = Eq(b1mf, b * (1 - f))
+eq_b1m2e = Eq(b1m2e, b * (1 + 2 * eps0))
+eq_b1mfa2 = Eq(b1mfa2, b * (1 - f * eta0**2))
+eq_b1mfpfa2 = Eq(b1mfpfa2, b * (1 - f + f * eta0**2))
+eq_bfes1ma2 = Eq(bfes1ma2, b * f * eta0 * sqrt(1 - eta0**2))
+
 # Time update equation for quasi-P state variable p
 update_p_nl = t.spacing**2 * vel0**2 / b * \
-    (g1_tilde(b * g1(p0)) +
-     g2_tilde(b * g2(p0)) +
-     g3_tilde(b * g3(p0))) + \
-    (2 - t.spacing * wOverQ) * p0 + \
-    (t.spacing * wOverQ - 1) * p0.backward
+    (g1_tilde(b1m2e * g1(p0)) +
+     g2_tilde(b1m2e * g2(p0)) +
+     g3_tilde(b1mfa2 * g3(p0) + bfes1ma2 * g3(m0))) + \
+    (2 - t.spacing * wOverQ) * p0 + (t.spacing * wOverQ - 1) * p0.backward
+
+# Time update equation for quasi-S state variable m
+update_m_nl = t.spacing**2 * vel0**2 / b * \
+    (g1_tilde(b1mf * g1(m0)) +
+     g2_tilde(b1mf * g2(m0)) +
+     g3_tilde(b1mfpfa2 * g3(m0) + bfes1ma2 * g3(p0))) + \
+    (2 - t.spacing * wOverQ) * m0 + (t.spacing * wOverQ - 1) * m0.backward
 
 stencil_p_nl = Eq(p0.forward, update_p_nl)
+stencil_m_nl = Eq(m0.forward, update_m_nl)
 
 dt = time_axis.step
 spacing_map = vel0.grid.spacing_map
 spacing_map.update({t.spacing: dt})
 
-# 2020.05.20
-def callback(n):
-    if n == 1:
-        return 50
-    elif n == 0:
-        return 20
-    assert False
-    
-op = Operator([stencil_p_nl, src_term],
-              subs=spacing_map, name='OpExampleIso',
-              opt=('advanced', {'cire-repeats-inv': 2, 'cire-mincost-inv': callback}))
+op = Operator([eq_b1mf, eq_b1m2e, eq_b1mfa2, eq_b1mfpfa2, eq_bfes1ma2,
+               stencil_p_nl, stencil_m_nl, src_term],
+              subs=spacing_map, name='OpExampleVtiFact1')
 
-# f = open("operator.iso.c", "w")
-# print(op, file=f)
-# f.close()
+f = open("operator.vti_fact1.c", "w")
+print(op, file=f)
+f.close()
 
-bx = 22
-by = 6
+bx = 12
+by = 5
+print("\nCache block size (bx,by) = (%3d,%3d)" % (bx, by))
 op.apply(x0_blk0_size=bx, y0_blk0_size=by)
