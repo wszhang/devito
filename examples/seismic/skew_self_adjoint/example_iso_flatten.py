@@ -35,6 +35,9 @@ t1 = 250.0
 dt = 1.0
 time_axis = TimeAxis(start=t0, stop=t1, step=dt)
 
+px = Function(name='px', grid=grid, space_order=space_order)
+py = Function(name='py', grid=grid, space_order=space_order)
+pz = Function(name='pz', grid=grid, space_order=space_order)
 p0 = TimeFunction(name='p0', grid=grid, time_order=2, space_order=space_order)
 t, x, y, z = p0.dimensions
 
@@ -72,23 +75,34 @@ def g3_tilde(field):
 # works for smaller sizes, seg faults at (1001,1001,501)
 # if you comment out the Y derivatives, works at (1001,1001,501)
 # Time update equation for quasi-P state variable p
-update_p_nl = t.spacing**2 * vel0**2 / b * \
-    (g1_tilde(b * g1(p0)) +
-     g2_tilde(b * g2(p0)) +
-     g3_tilde(b * g3(p0))) + \
+update_px = Eq(px, g1_tilde(b * g1(p0)))
+update_py = Eq(py, g2_tilde(b * g2(p0)))
+update_pz = Eq(pz, g3_tilde(b * g3(p0)))
+
+update_p0 = t.spacing**2 * vel0**2 / b * (px + py + pz) + \
     (2 - t.spacing * wOverQ) * p0 + \
     (t.spacing * wOverQ - 1) * p0.backward
 
-stencil_p_nl = Eq(p0.forward, update_p_nl)
+stencil_p0 = Eq(p0.forward, update_p0)
+
+print(" ")
+print(update_px)
+print(" ")
+print(update_py)
+print(" ")
+print(update_pz)
+print(" ")
+print(update_p0)
 
 dt = time_axis.step
 spacing_map = vel0.grid.spacing_map
 spacing_map.update({t.spacing: dt})
 
-op = Operator([stencil_p_nl, src_term],
-              subs=spacing_map, name='OpExampleIso')
+op = Operator([update_px, update_py, update_pz, stencil_p0, src_term],
+              subs=spacing_map, name='OpExampleIsoFlatten')
 
-f = open("operator.iso.c", "w")
+print(op.args)
+f = open("operator.iso_flatten.c", "w")
 print(op, file=f)
 f.close()
 

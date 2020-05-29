@@ -1,7 +1,26 @@
 import numpy as np
 
 from devito import (Grid, Function, TimeFunction, Eq, Operator)
+from devito import VectorFunction, TensorFunction, NODE
 from examples.seismic import RickerSource, TimeAxis
+
+
+### This will have to go in devito but hacked here for now
+
+def grads(func, side="left"):
+    shift = 1 if side == "right" else -1
+    print(func, shift)
+    comps = [getattr(func, 'd%s' % d.name)(x0=d + shift * d.spacing/2)
+             for d in func.dimensions if d.is_Space]
+    return VectorFunction(name='grad_%s' % func.name, space_order=func.space_order,
+                          components=comps, grid=func.grid, staggered=(None, None, None))
+            
+def divs(func, side="left"):
+    shift = 1 if side == "right" else -1
+    print(func, shift)
+    return sum([getattr(func[i], 'd%s' % d.name)(x0=d + shift * d.spacing/2)
+                for i, d in enumerate(func.space_dimensions)])
+
 
 space_order = 8
 dtype = np.float32
@@ -13,9 +32,6 @@ tmax = 3.0
 fpeak = 0.010
 omega = 2.0 * np.pi * fpeak
 
-# shape = (601, 601, 301)
-# shape = (801, 801, 401)
-# shape = (1001, 1001, 501)
 shape = (1201, 1201, 601)
 spacing = (10.0, 10.0, 10.0)
 origin = tuple([0.0 for s in shape])
@@ -26,9 +42,9 @@ b = Function(name='b', grid=grid, space_order=space_order)
 vel0 = Function(name='vel0', grid=grid, space_order=space_order)
 wOverQ = Function(name='wOverQ', grid=vel0.grid, space_order=space_order)
 
-b.data[:] = 1.0
-vel0.data[:] = 1.5
-wOverQ.data[:] = 1.0
+b._data_with_outhalo[:] = 1.0
+vel0._data_with_outhalo[:] = 1.5
+wOverQ._data_with_outhalo[:] = 1.0
 
 t0 = 0.0
 t1 = 250.0
@@ -44,51 +60,30 @@ src = RickerSource(name='src', grid=vel0.grid, f0=fpeak, npoint=1, time_range=ti
 src.coordinates.data[:] = src_coords[:]
 src_term = src.inject(field=p0.forward, expr=src * t.spacing**2 * vel0**2 / b)
 
+P = VectorFunction(name="P", grid=grid, space_order=space_order, staggered=(None, None, None))
 
-def g1(field):
-    return field.dx(x0=x+x.spacing/2)
+b_ii = [[b, 0, 0],
+        [0, b, 0],
+        [0, 0, b]]
 
+B = TensorFunction(name="B", grid=grid, components=b_ii, diagonal=True)
 
-def g2(field):
-    return field.dy(x0=y+y.spacing/2)
+eq_P = Eq(P, B * grads(p0, side="right"))
 
-
-def g3(field):
-    return field.dz(x0=z+z.spacing/2)
-
-
-def g1_tilde(field):
-    return field.dx(x0=x-x.spacing/2)
-
-
-def g2_tilde(field):
-    return field.dy(x0=y-y.spacing/2)
-
-
-def g3_tilde(field):
-    return field.dz(x0=z-z.spacing/2)
-
-
-# works for smaller sizes, seg faults at (1001,1001,501)
-# if you comment out the Y derivatives, works at (1001,1001,501)
-# Time update equation for quasi-P state variable p
-update_p_nl = t.spacing**2 * vel0**2 / b * \
-    (g1_tilde(b * g1(p0)) +
-     g2_tilde(b * g2(p0)) +
-     g3_tilde(b * g3(p0))) + \
+update_p = t.spacing**2 * vel0**2 / b * divs(P, side="left") + \
     (2 - t.spacing * wOverQ) * p0 + \
     (t.spacing * wOverQ - 1) * p0.backward
 
-stencil_p_nl = Eq(p0.forward, update_p_nl)
+stencil_p = Eq(p0.forward, update_p)
 
 dt = time_axis.step
 spacing_map = vel0.grid.spacing_map
 spacing_map.update({t.spacing: dt})
 
-op = Operator([stencil_p_nl, src_term],
-              subs=spacing_map, name='OpExampleIso')
+op = Operator([eq_P, stencil_p, src_term],
+              subs=spacing_map, name='OpExampleIsoTensor')
 
-f = open("operator.iso.c", "w")
+f = open("operator.iso_tensor.c", "w")
 print(op, file=f)
 f.close()
 
