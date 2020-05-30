@@ -86,17 +86,8 @@ dt = time_axis.step
 spacing_map = vel0.grid.spacing_map
 spacing_map.update({t.spacing: dt})
 
-# 2020.05.20
-def callback(n):
-    if n == 1:
-        return 50
-    elif n == 0:
-        return 20
-    assert False
-    
 op = Operator([stencil_p_nl, src_term],
-              subs=spacing_map, name='OpExampleIso_blk',
-              opt=('advanced', {'cire-repeats-inv': 2, 'cire-mincost-inv': callback}))
+              subs=spacing_map, name='OpExampleIso')
 
 filename = "timing_iso.%s.txt" % (socket.gethostname())
 print("filename; ", filename)
@@ -105,11 +96,11 @@ comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
 bx1 = 0
-bx2 = 32
-dbx = 1
+bx2 = 64
+dbx = 2
 by1 = 0
-by2 = 32
-dby = 1
+by2 = 64
+dby = 2
 
 f = open(filename, "w")
 
