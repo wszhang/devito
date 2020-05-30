@@ -35,17 +35,17 @@ t1 = 250.0
 dt = 1.0
 time_axis = TimeAxis(start=t0, stop=t1, step=dt)
 
-px = Function(name='px', grid=grid, space_order=space_order)
-py = Function(name='py', grid=grid, space_order=space_order)
-pz = Function(name='pz', grid=grid, space_order=space_order)
-p0 = TimeFunction(name='p0', grid=grid, time_order=2, space_order=space_order)
-t, x, y, z = p0.dimensions
+p_x = Function(name='p_x', grid=grid, space_order=space_order)
+p_y = Function(name='p_y', grid=grid, space_order=space_order)
+p_z = Function(name='p_z', grid=grid, space_order=space_order)
+p_0 = TimeFunction(name='p_0', grid=grid, time_order=2, space_order=space_order)
+t, x, y, z = p_0.dimensions
 
 src_coords = np.empty((1, len(shape)), dtype=dtype)
 src_coords[0, :] = [d * (s-1)//2 for d, s in zip(spacing, shape)]
 src = RickerSource(name='src', grid=vel0.grid, f0=fpeak, npoint=1, time_range=time_axis)
 src.coordinates.data[:] = src_coords[:]
-src_term = src.inject(field=p0.forward, expr=src * t.spacing**2 * vel0**2 / b)
+src_term = src.inject(field=p_0.forward, expr=src * t.spacing**2 * vel0**2 / b)
 
 
 def g1(field):
@@ -72,27 +72,22 @@ def g3_tilde(field):
     return field.dz(x0=z-z.spacing/2)
 
 
-# works for smaller sizes, seg faults at (1001,1001,501)
-# if you comment out the Y derivatives, works at (1001,1001,501)
 # Time update equation for quasi-P state variable p
-update_px = Eq(px, g1_tilde(b * g1(p0)))
-update_py = Eq(py, g2_tilde(b * g2(p0)))
-update_pz = Eq(pz, g3_tilde(b * g3(p0)))
+# update_px = Eq(p_x, b * g1(p_0))
+# update_py = Eq(p_y, b * g2(p_0))
+# update_pz = Eq(p_z, b * g3(p_0))
 
-update_p0 = t.spacing**2 * vel0**2 / b * (px + py + pz) + \
-    (2 - t.spacing * wOverQ) * p0 + \
-    (t.spacing * wOverQ - 1) * p0.backward
+# update_p0 = t.spacing**2 * vel0**2 / b * (g1_tilde(p_x) + g1_tilde(p_y) + g1_tilde(p_z)) + \
+#     (2 - t.spacing * wOverQ) * p_0 + (t.spacing * wOverQ - 1) * p_0.backward
 
-stencil_p0 = Eq(p0.forward, update_p0)
+update_px = Eq(p_x, g1_tilde(b * g1(p_0)))
+update_py = Eq(p_y, g2_tilde(b * g2(p_0)))
+update_pz = Eq(p_z, g3_tilde(b * g3(p_0)))
 
-print(" ")
-print(update_px)
-print(" ")
-print(update_py)
-print(" ")
-print(update_pz)
-print(" ")
-print(update_p0)
+update_p0 = t.spacing**2 * vel0**2 / b * (p_x + p_y + p_z) + \
+    (2 - t.spacing * wOverQ) * p_0 + (t.spacing * wOverQ - 1) * p_0.backward
+
+stencil_p0 = Eq(p_0.forward, update_p0)
 
 dt = time_axis.step
 spacing_map = vel0.grid.spacing_map

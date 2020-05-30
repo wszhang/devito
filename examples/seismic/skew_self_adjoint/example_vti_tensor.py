@@ -95,12 +95,15 @@ R = TensorFunction(name="R", grid=grid, components=Rt * Rp, symmetric=False)
 a_ii = [[b * (1 + 2 * eps0), 0, 0],
         [0, b * (1 + 2 * eps0), 0],
         [0, 0, b * (1 - f * eta0**2)]]
+
 b_ii = [[0, 0, 0],
         [0, 0, 0],
         [0, 0, b * f * eta0 * sqrt(1 - eta0**2)]]
+
 c_ii = [[b * (1 - f), 0, 0],
         [0, b * (1 - f), 0],
         [0, 0, b * (1 - f + f * eta0**2)]]
+
 A = TensorFunction(name="A", grid=grid, components=a_ii, diagonal=True)
 B = TensorFunction(name="B", grid=grid, components=b_ii, diagonal=True)
 C = TensorFunction(name="C", grid=grid, components=c_ii, diagonal=True)

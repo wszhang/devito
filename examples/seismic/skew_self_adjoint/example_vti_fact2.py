@@ -85,6 +85,13 @@ b1mfa2 = Function(name='b1mfa2', grid=grid, space_order=space_order)
 b1mfpfa2 = Function(name='b1mfpfa2', grid=grid, space_order=space_order)
 bfes1ma2 = Function(name='bfes1ma2', grid=grid, space_order=space_order)
 
+p_x = Function(name='p_x', grid=grid, space_order=space_order)
+p_y = Function(name='p_y', grid=grid, space_order=space_order)
+p_z = Function(name='p_z', grid=grid, space_order=space_order)
+m_x = Function(name='m_x', grid=grid, space_order=space_order)
+m_y = Function(name='m_y', grid=grid, space_order=space_order)
+m_z = Function(name='m_z', grid=grid, space_order=space_order)
+
 # Equations for additional factorization
 eq_b1mf = Eq(b1mf, b * (1 - f))
 eq_b1m2e = Eq(b1m2e, b * (1 + 2 * eps0))
@@ -92,18 +99,20 @@ eq_b1mfa2 = Eq(b1mfa2, b * (1 - f * eta0**2))
 eq_b1mfpfa2 = Eq(b1mfpfa2, b * (1 - f + f * eta0**2))
 eq_bfes1ma2 = Eq(bfes1ma2, b * f * eta0 * sqrt(1 - eta0**2))
 
+eq_px = Eq(p_x, g1_tilde(b1m2e * g1(p0)))
+eq_py = Eq(p_y, g2_tilde(b1m2e * g2(p0)))
+eq_pz = Eq(p_z, g3_tilde(b1mfa2 * g3(p0) + bfes1ma2 * g3(m0)))
+
+eq_mx = Eq(m_x, g1_tilde(b1mf * g1(m0)))
+eq_my = Eq(m_y, g2_tilde(b1mf * g2(m0)))
+eq_mz = Eq(m_z, g3_tilde(b1mfpfa2 * g3(m0) + bfes1ma2 * g3(p0)))
+
 # Time update equation for quasi-P state variable p
-update_p_nl = t.spacing**2 * vel0**2 / b * \
-    (g1_tilde(b1m2e * g1(p0)) +
-     g2_tilde(b1m2e * g2(p0)) +
-     g3_tilde(b1mfa2 * g3(p0) + bfes1ma2 * g3(m0))) + \
+update_p_nl = t.spacing**2 * vel0**2 / b * (p_x + p_y + p_z) + \
     (2 - t.spacing * wOverQ) * p0 + (t.spacing * wOverQ - 1) * p0.backward
 
 # Time update equation for quasi-S state variable m
-update_m_nl = t.spacing**2 * vel0**2 / b * \
-    (g1_tilde(b1mf * g1(m0)) +
-     g2_tilde(b1mf * g2(m0)) +
-     g3_tilde(b1mfpfa2 * g3(m0) + bfes1ma2 * g3(p0))) + \
+update_m_nl = t.spacing**2 * vel0**2 / b * (m_x + m_y + m_z) + \
     (2 - t.spacing * wOverQ) * m0 + (t.spacing * wOverQ - 1) * m0.backward
 
 stencil_p_nl = Eq(p0.forward, update_p_nl)
@@ -114,10 +123,11 @@ spacing_map = vel0.grid.spacing_map
 spacing_map.update({t.spacing: dt})
 
 op = Operator([eq_b1mf, eq_b1m2e, eq_b1mfa2, eq_b1mfpfa2, eq_bfes1ma2,
+               eq_px, eq_py, eq_pz, eq_mx, eq_my, eq_mz,
                stencil_p_nl, stencil_m_nl, src_term],
-              subs=spacing_map, name='OpExampleVtiFact1')
+              subs=spacing_map, name='OpExampleVtiFact2')
 
-f = open("operator.vti_fact1.c", "w")
+f = open("operator.vti_fact2.c", "w")
 print(op, file=f)
 f.close()
 
