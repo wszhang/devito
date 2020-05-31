@@ -21,10 +21,10 @@ grid = Grid(extent=extent, shape=shape, origin=origin, dtype=dtype)
 
 b = Function(name='b', grid=grid, space_order=space_order)
 f = Function(name='f', grid=grid, space_order=space_order)
-vel0 = Function(name='vel0', grid=grid, space_order=space_order)
-eps0 = Function(name='eps0', grid=vel0.grid, space_order=space_order)
-eta0 = Function(name='eta0', grid=vel0.grid, space_order=space_order)
-wOverQ = Function(name='wOverQ', grid=vel0.grid, space_order=space_order)
+vel = Function(name='vel', grid=grid, space_order=space_order)
+eps = Function(name='eps', grid=vel.grid, space_order=space_order)
+eta = Function(name='eta', grid=vel.grid, space_order=space_order)
+wOverQ = Function(name='wOverQ', grid=vel.grid, space_order=space_order)
 
 _b = 1.0
 _f = 0.84
@@ -33,9 +33,9 @@ _eta = 0.4
 
 b.data[:] = _b
 f.data[:] = _f
-vel0.data[:] = 1.5
-eps0.data[:] = _eps
-eta0.data[:] = _eta
+vel.data[:] = 1.5
+eps.data[:] = _eps
+eta.data[:] = _eta
 wOverQ.data[:] = 1.0
 
 t0 = 0.0
@@ -49,9 +49,9 @@ t, x, y, z = p0.dimensions
 
 src_coords = np.empty((1, len(shape)), dtype=dtype)
 src_coords[0, :] = [d * (s-1)//2 for d, s in zip(spacing, shape)]
-src = RickerSource(name='src', grid=vel0.grid, f0=fpeak, npoint=1, time_range=time_axis)
+src = RickerSource(name='src', grid=vel.grid, f0=fpeak, npoint=1, time_range=time_axis)
 src.coordinates.data[:] = src_coords[:]
-src_term = src.inject(field=p0.forward, expr=src * t.spacing**2 * vel0**2 / b)
+src_term = src.inject(field=p0.forward, expr=src * t.spacing**2 * vel**2 / b)
 
 
 def g1(field):
@@ -94,10 +94,10 @@ m_z = Function(name='m_z', grid=grid, space_order=space_order)
 
 # Equations for additional factorization
 eq_b1mf = Eq(b1mf, b * (1 - f))
-eq_b1m2e = Eq(b1m2e, b * (1 + 2 * eps0))
-eq_b1mfa2 = Eq(b1mfa2, b * (1 - f * eta0**2))
-eq_b1mfpfa2 = Eq(b1mfpfa2, b * (1 - f + f * eta0**2))
-eq_bfes1ma2 = Eq(bfes1ma2, b * f * eta0 * sqrt(1 - eta0**2))
+eq_b1m2e = Eq(b1m2e, b * (1 + 2 * eps))
+eq_b1mfa2 = Eq(b1mfa2, b * (1 - f * eta**2))
+eq_b1mfpfa2 = Eq(b1mfpfa2, b * (1 - f + f * eta**2))
+eq_bfes1ma2 = Eq(bfes1ma2, b * f * eta * sqrt(1 - eta**2))
 
 eq_px = Eq(p_x, g1_tilde(b1m2e * g1(p0)))
 eq_py = Eq(p_y, g2_tilde(b1m2e * g2(p0)))
@@ -108,18 +108,18 @@ eq_my = Eq(m_y, g2_tilde(b1mf * g2(m0)))
 eq_mz = Eq(m_z, g3_tilde(b1mfpfa2 * g3(m0) + bfes1ma2 * g3(p0)))
 
 # Time update equation for quasi-P state variable p
-update_p_nl = t.spacing**2 * vel0**2 / b * (p_x + p_y + p_z) + \
+update_p_nl = t.spacing**2 * vel**2 / b * (p_x + p_y + p_z) + \
     (2 - t.spacing * wOverQ) * p0 + (t.spacing * wOverQ - 1) * p0.backward
 
 # Time update equation for quasi-S state variable m
-update_m_nl = t.spacing**2 * vel0**2 / b * (m_x + m_y + m_z) + \
+update_m_nl = t.spacing**2 * vel**2 / b * (m_x + m_y + m_z) + \
     (2 - t.spacing * wOverQ) * m0 + (t.spacing * wOverQ - 1) * m0.backward
 
 stencil_p_nl = Eq(p0.forward, update_p_nl)
 stencil_m_nl = Eq(m0.forward, update_m_nl)
 
 dt = time_axis.step
-spacing_map = vel0.grid.spacing_map
+spacing_map = vel.grid.spacing_map
 spacing_map.update({t.spacing: dt})
 
 op = Operator([eq_b1mf, eq_b1m2e, eq_b1mfa2, eq_b1mfpfa2, eq_bfes1ma2,

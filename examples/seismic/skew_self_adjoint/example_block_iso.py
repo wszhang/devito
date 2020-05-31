@@ -15,9 +15,6 @@ tmax = 20.0
 fpeak = 0.010
 omega = 2.0 * np.pi * fpeak
 
-# shape = (601, 601, 301)
-# shape = (801, 801, 401)
-# shape = (1001, 1001, 501)
 shape = (1201, 1201, 601)
 spacing = (10.0, 10.0, 10.0)
 origin = tuple([0.0 for s in shape])
@@ -25,17 +22,17 @@ extent = tuple([d * (s - 1) for s, d in zip(shape, spacing)])
 grid = Grid(extent=extent, shape=shape, origin=origin, dtype=dtype)
 
 b = Function(name='b', grid=grid, space_order=space_order)
-vel0 = Function(name='vel0', grid=grid, space_order=space_order)
-wOverQ = Function(name='wOverQ', grid=vel0.grid, space_order=space_order)
+vel = Function(name='vel', grid=grid, space_order=space_order)
+wOverQ = Function(name='wOverQ', grid=grid, space_order=space_order)
 
 _v = 1.5
 _b = 1.0
 
 b.data[:] = _b
-vel0.data[:] = _v
+vel.data[:] = _v
 
 t0 = 0.0
-t1 = 20.0
+t1 = 12.0
 dt = 1.0
 time_axis = TimeAxis(start=t0, stop=t1, step=dt)
 
@@ -44,9 +41,9 @@ t, x, y, z = p0.dimensions
 
 src_coords = np.empty((1, len(shape)), dtype=dtype)
 src_coords[0, :] = [d * (s-1)//2 for d, s in zip(spacing, shape)]
-src = RickerSource(name='src', grid=vel0.grid, f0=fpeak, npoint=1, time_range=time_axis)
+src = RickerSource(name='src', grid=grid, f0=fpeak, npoint=1, time_range=time_axis)
 src.coordinates.data[:] = src_coords[:]
-src_term = src.inject(field=p0.forward, expr=src * t.spacing**2 * vel0**2 / b)
+src_term = src.inject(field=p0.forward, expr=src * t.spacing**2 * vel**2 / b)
 
 
 def g1(field):
@@ -74,19 +71,19 @@ def g3_tilde(field):
 
 
 # Time update equation for quasi-P state variable p
-update_p_nl = t.spacing**2 * vel0**2 / b * \
+update_p = t.spacing**2 * vel**2 / b * \
     (g1_tilde(b * g1(p0)) +
      g2_tilde(b * g2(p0)) +
      g3_tilde(b * g3(p0))) + \
     (2 - t.spacing * wOverQ) * p0 + (t.spacing * wOverQ - 1) * p0.backward
 
-stencil_p_nl = Eq(p0.forward, update_p_nl)
+stencil_p = Eq(p0.forward, update_p)
 
 dt = time_axis.step
-spacing_map = vel0.grid.spacing_map
+spacing_map = grid.spacing_map
 spacing_map.update({t.spacing: dt})
 
-op = Operator([stencil_p_nl, src_term],
+op = Operator([stencil_p, src_term],
               subs=spacing_map, name='OpExampleIso')
 
 filename = "timing_iso.%s.txt" % (socket.gethostname())

@@ -1,5 +1,7 @@
+import socket
 import numpy as np
 from sympy import sqrt, sin, cos
+from mpi4py import MPI
 
 from devito import (Grid, Function, TimeFunction, Eq, Operator)
 from examples.seismic import RickerSource, TimeAxis
@@ -9,7 +11,7 @@ dtype = np.float32
 npad = 20
 qmin = 0.1
 qmax = 1000.0
-tmax = 250.0
+tmax = 20.0
 fpeak = 0.010
 omega = 2.0 * np.pi * fpeak
 
@@ -21,31 +23,24 @@ grid = Grid(extent=extent, shape=shape, origin=origin, dtype=dtype)
 
 b = Function(name='b', grid=grid, space_order=space_order)
 f = Function(name='f', grid=grid, space_order=space_order)
-phi = Function(name='phi', grid=grid, space_order=space_order)
-theta = Function(name='theta', grid=grid, space_order=space_order)
 vel = Function(name='vel', grid=grid, space_order=space_order)
-eps = Function(name='eps', grid=vel.grid, space_order=space_order)
-eta = Function(name='eta', grid=vel.grid, space_order=space_order)
-wOverQ = Function(name='wOverQ', grid=vel.grid, space_order=space_order)
+eps = Function(name='eps', grid=grid, space_order=space_order)
+eta = Function(name='eta', grid=grid, space_order=space_order)
+wOverQ = Function(name='wOverQ', grid=grid, space_order=space_order)
+theta = Function(name='theta', grid=grid, space_order=space_order)
+phi = Function(name='phi', grid=grid, space_order=space_order)
 
-_b = 1.0
-_f = 0.84
-_eps = 0.2
-_eta = 0.4
-_phi = np.pi / 3
-_theta = np.pi / 6
-
-b.data[:] = _b
-f.data[:] = _f
+b.data[:] = 1.0
+f.data[:] = 0.84
 vel.data[:] = 1.5
-eps.data[:] = _eps
-eta.data[:] = _eta
-phi.data[:] = _phi
-theta.data[:] = _theta
+eps.data[:] = 0.2
+eta.data[:] = 0.4
 wOverQ.data[:] = 1.0
+theta.data[:] = np.pi / 3
+phi.data[:] = np.pi / 6
 
 t0 = 0.0
-t1 = 250.0
+t1 = 12.0
 dt = 1.0
 time_axis = TimeAxis(start=t0, stop=t1, step=dt)
 
@@ -55,7 +50,7 @@ t, x, y, z = p0.dimensions
 
 src_coords = np.empty((1, len(shape)), dtype=dtype)
 src_coords[0, :] = [d * (s-1)//2 for d, s in zip(spacing, shape)]
-src = RickerSource(name='src', grid=vel.grid, f0=fpeak, npoint=1, time_range=time_axis)
+src = RickerSource(name='src', grid=grid, f0=fpeak, npoint=1, time_range=time_axis)
 src.coordinates.data[:] = src_coords[:]
 src_term = src.inject(field=p0.forward, expr=src * t.spacing**2 * vel**2 / b)
 
@@ -111,7 +106,7 @@ eq_bfes1ma2 = Eq(bfes1ma2, b * f * eta * sqrt(1 - eta**2))
 eq_bfa2 = Eq(bfa2, b * f * eta**2)
 
 # Time update equation for quasi-P state variable p
-update_p_nl = t.spacing**2 * vel**2 / b * \
+update_p = t.spacing**2 * vel**2 / b * \
     (gx_tilde(b1m2e * gx(p0)) +
      gy_tilde(b1m2e * gy(p0)) +
      gz_tilde(b1m2e * gz(p0)) +
@@ -120,7 +115,7 @@ update_p_nl = t.spacing**2 * vel**2 / b * \
     (2 - t.spacing * wOverQ) * p0 + (t.spacing * wOverQ - 1) * p0.backward
 
 # Time update equation for quasi-S state variable m
-update_m_nl = t.spacing**2 * vel**2 / b * \
+update_m = t.spacing**2 * vel**2 / b * \
     (gx_tilde(b1mf * gx(m0)) +
      gy_tilde(b1mf * gy(m0)) +
      gz_tilde(b1mf * gz(m0)) +
@@ -128,21 +123,42 @@ update_m_nl = t.spacing**2 * vel**2 / b * \
               bfa2 * g3(m0, phi, theta),  phi, theta)) + \
     (2 - t.spacing * wOverQ) * m0 + (t.spacing * wOverQ - 1) * m0.backward
 
-stencil_p_nl = Eq(p0.forward, update_p_nl)
-stencil_m_nl = Eq(m0.forward, update_m_nl)
+stencil_p = Eq(p0.forward, update_p)
+stencil_m = Eq(m0.forward, update_m)
 
 dt = time_axis.step
-spacing_map = vel.grid.spacing_map
+spacing_map = grid.spacing_map
 spacing_map.update({t.spacing: dt})
 
 op = Operator([eq_b1m2e, eq_b1mf, eq_b2epfa2, eq_bfes1ma2, eq_bfa2,
-               stencil_p_nl, stencil_m_nl, src_term],
+               stencil_p, stencil_m, src_term],
               subs=spacing_map, name='OpExampleTtiFact1')
 
-f = open("operator.tti_fact1.c", "w")
-print(op, file=f)
-f.close()
+filename = "timing_tti.%s.txt" % (socket.gethostname())
+print("filename; ", filename)
 
-bx = 8
-by = 8
-op.apply(x0_blk0_size=bx, y0_blk0_size=by)
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+
+bx1 = 0
+bx2 = 64
+dbx = 2
+by1 = 0
+by2 = 64
+dby = 2
+
+f = open(filename, "w")
+
+for bx in range(bx2, bx1, -dbx):
+    for by in range(by2, by1, -dby):
+        p0.data[:] = 0
+        m0.data[:] = 0
+        s = op.apply(x0_blk0_size=bx, y0_blk0_size=by)
+        if rank == 0:
+            gpointss = np.sum([v.gpointss for k, v in s.items()])
+            # gpointss = np.max([v.gpointss for k, v in s.items()])
+            print("bx,by,gpts/s; %3d %3d %10.6f" % (bx, by, gpointss))
+            print("bx,by,gpts/s; %3d %3d %10.6f" % (bx, by, gpointss), file=f)
+            f.flush()
+
+f.close()

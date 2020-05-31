@@ -42,10 +42,10 @@ b = Function(name='b', grid=grid, space_order=space_order)
 f = Function(name='f', grid=grid, space_order=space_order)
 phi = Function(name='phi', grid=grid, space_order=space_order)
 theta = Function(name='theta', grid=grid, space_order=space_order)
-vel0 = Function(name='vel0', grid=grid, space_order=space_order)
-eps0 = Function(name='eps0', grid=vel0.grid, space_order=space_order)
-eta0 = Function(name='eta0', grid=vel0.grid, space_order=space_order)
-wOverQ = Function(name='wOverQ', grid=vel0.grid, space_order=space_order)
+vel = Function(name='vel', grid=grid, space_order=space_order)
+eps = Function(name='eps', grid=vel.grid, space_order=space_order)
+eta = Function(name='eta', grid=vel.grid, space_order=space_order)
+wOverQ = Function(name='wOverQ', grid=vel.grid, space_order=space_order)
 
 _b = 1.0
 _f = 0.84
@@ -56,9 +56,9 @@ _theta = np.pi / 6
 
 b._data_with_outhalo[:] = _b
 f._data_with_outhalo[:] = _f
-vel0._data_with_outhalo[:] = 1.5
-eps0._data_with_outhalo[:] = _eps
-eta0._data_with_outhalo[:] = _eta
+vel._data_with_outhalo[:] = 1.5
+eps._data_with_outhalo[:] = _eps
+eta._data_with_outhalo[:] = _eta
 phi._data_with_outhalo[:] = _phi
 theta._data_with_outhalo[:] = _theta
 wOverQ._data_with_outhalo[:] = 0.0
@@ -76,10 +76,10 @@ m0 = TimeFunction(name='m0', grid=grid, time_order=2, space_order=space_order)
 src_coords = np.empty((1, len(shape)), dtype=dtype)
 src_coords[0, :] = [d * (s-1)//2 for d, s in zip(spacing, shape)]
 
-src = RickerSource(name='src', grid=vel0.grid, f0=fpeak, npoint=1, time_range=time_axis)
+src = RickerSource(name='src', grid=vel.grid, f0=fpeak, npoint=1, time_range=time_axis)
 src.coordinates.data[:] = src_coords[:]
 
-src_term = src.inject(field=p0.forward, expr=src * t.spacing**2 * vel0**2 / b)
+src_term = src.inject(field=p0.forward, expr=src * t.spacing**2 * vel**2 / b)
 
 # Vector for gradients
 P_I = VectorFunction(name="P_I", grid=grid, space_order=space_order, staggered=(None, None, None))
@@ -92,17 +92,17 @@ Rp = sympy.rot_axis3(phi)
 R = TensorFunction(name="R", grid=grid, components=Rt * Rp, symmetric=False)
 
 # Diagonal matrices
-a_ii = [[b * (1 + 2 * eps0), 0, 0],
-        [0, b * (1 + 2 * eps0), 0],
-        [0, 0, b * (1 - f * eta0**2)]]
+a_ii = [[b * (1 + 2 * eps), 0, 0],
+        [0, b * (1 + 2 * eps), 0],
+        [0, 0, b * (1 - f * eta**2)]]
 
 b_ii = [[0, 0, 0],
         [0, 0, 0],
-        [0, 0, b * f * eta0 * sqrt(1 - eta0**2)]]
+        [0, 0, b * f * eta * sqrt(1 - eta**2)]]
 
 c_ii = [[b * (1 - f), 0, 0],
         [0, b * (1 - f), 0],
-        [0, 0, b * (1 - f + f * eta0**2)]]
+        [0, 0, b * (1 - f + f * eta**2)]]
 
 A = TensorFunction(name="A", grid=grid, components=a_ii, diagonal=True)
 B = TensorFunction(name="B", grid=grid, components=b_ii, diagonal=True)
@@ -112,12 +112,12 @@ C = TensorFunction(name="C", grid=grid, components=c_ii, diagonal=True)
 eq_PI = Eq(P_I, R.T * (A * R * grads(p0, side="right") + B * R * grads(m0, side="right")))
 eq_MI = Eq(M_I, R.T * (B * R * grads(p0, side="right") + C * R * grads(m0, side="right")))
 # Time update equation for quasi-P state variable p
-update_p_nl = t.spacing**2 * vel0**2 / b * divs(P_I, side="left") + \
+update_p_nl = t.spacing**2 * vel**2 / b * divs(P_I, side="left") + \
     (2 - t.spacing * wOverQ) * p0 + \
     (t.spacing * wOverQ - 1) * p0.backward
 
 # Time update equation for quasi-S state variable m
-update_m_nl = t.spacing**2 * vel0**2 / b * divs(M_I, side="left") + \
+update_m_nl = t.spacing**2 * vel**2 / b * divs(M_I, side="left") + \
     (2 - t.spacing * wOverQ) * m0 + \
     (t.spacing * wOverQ - 1) * m0.backward
 
@@ -125,7 +125,7 @@ stencil_p_nl = Eq(p0.forward, update_p_nl)
 stencil_m_nl = Eq(m0.forward, update_m_nl)
 
 dt = time_axis.step
-spacing_map = vel0.grid.spacing_map
+spacing_map = vel.grid.spacing_map
 spacing_map.update({t.spacing: dt})
 
 op = Operator([eq_PI, eq_MI, stencil_p_nl, stencil_m_nl, src_term],
