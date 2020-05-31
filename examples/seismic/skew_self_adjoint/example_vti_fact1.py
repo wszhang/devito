@@ -121,7 +121,7 @@ f = open("operator.vti_fact1.c", "w")
 print(op, file=f)
 f.close()
 
-bx = 12
-by = 5
+bx = 8
+by = 8
 print("\nCache block size (bx,by) = (%3d,%3d)" % (bx, by))
 op.apply(x0_blk0_size=bx, y0_blk0_size=by)

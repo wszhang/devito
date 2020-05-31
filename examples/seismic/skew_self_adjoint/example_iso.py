@@ -92,6 +92,6 @@ f = open("operator.iso.c", "w")
 print(op, file=f)
 f.close()
 
-bx = 22
-by = 6
+bx = 8
+by = 8
 op.apply(x0_blk0_size=bx, y0_blk0_size=by)

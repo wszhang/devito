@@ -13,9 +13,6 @@ tmax = 250.0
 fpeak = 0.010
 omega = 2.0 * np.pi * fpeak
 
-# shape = (601, 601, 301)
-# shape = (801, 801, 401)
-# shape = (1001, 1001, 501)
 shape = (1201, 1201, 601)
 spacing = (10.0, 10.0, 10.0)
 origin = tuple([0.0 for s in shape])
@@ -117,11 +114,11 @@ def callback(n):
 op = Operator([stencil_p_nl, stencil_m_nl, src_term],
               subs=spacing_map, name='OpExampleVti')
 
-# f = open("operator.vti.c", "w")
-# print(op, file=f)
-# f.close()
+f = open("operator.vti.c", "w")
+print(op, file=f)
+f.close()
 
-bx = 12
-by = 5
+bx = 8
+by = 8
 print("\nCache block size (bx,by) = (%3d,%3d)" % (bx, by))
 op.apply(x0_blk0_size=bx, y0_blk0_size=by)

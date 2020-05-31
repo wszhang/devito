@@ -72,14 +72,6 @@ def g3_tilde(field):
     return field.dz(x0=z-z.spacing/2)
 
 
-# Time update equation for quasi-P state variable p
-# update_px = Eq(p_x, b * g1(p_0))
-# update_py = Eq(p_y, b * g2(p_0))
-# update_pz = Eq(p_z, b * g3(p_0))
-
-# update_p0 = t.spacing**2 * vel**2 / b * (g1_tilde(p_x) + g1_tilde(p_y) + g1_tilde(p_z)) + \
-#     (2 - t.spacing * wOverQ) * p_0 + (t.spacing * wOverQ - 1) * p_0.backward
-
 update_px = Eq(p_x, g1_tilde(b * g1(p_0)))
 update_py = Eq(p_y, g2_tilde(b * g2(p_0)))
 update_pz = Eq(p_z, g3_tilde(b * g3(p_0)))
@@ -101,6 +93,6 @@ f = open("operator.iso_flatten.c", "w")
 print(op, file=f)
 f.close()
 
-bx = 22
-by = 6
+bx = 8
+by = 8
 op.apply(x0_blk0_size=bx, y0_blk0_size=by)
