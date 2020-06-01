@@ -40,30 +40,22 @@ grid = Grid(extent=extent, shape=shape, origin=origin, dtype=dtype)
 
 b = Function(name='b', grid=grid, space_order=space_order)
 f = Function(name='f', grid=grid, space_order=space_order)
-phi = Function(name='phi', grid=grid, space_order=space_order)
-theta = Function(name='theta', grid=grid, space_order=space_order)
 vel = Function(name='vel', grid=grid, space_order=space_order)
 eps = Function(name='eps', grid=vel.grid, space_order=space_order)
 eta = Function(name='eta', grid=vel.grid, space_order=space_order)
 wOverQ = Function(name='wOverQ', grid=vel.grid, space_order=space_order)
+theta = Function(name='theta', grid=grid, space_order=space_order)
+phi = Function(name='phi', grid=grid, space_order=space_order)
 
-_b = 1.0
-_f = 0.84
-_eps = 0.2
-_eta = 0.4
-_phi = np.pi / 10
-_theta = np.pi / 6
-
-b._data_with_outhalo[:] = _b
-f._data_with_outhalo[:] = _f
+b._data_with_outhalo[:] = 1.0
+f._data_with_outhalo[:] = 0.84
 vel._data_with_outhalo[:] = 1.5
-eps._data_with_outhalo[:] = _eps
-eta._data_with_outhalo[:] = _eta
-phi._data_with_outhalo[:] = _phi
-theta._data_with_outhalo[:] = _theta
+eps._data_with_outhalo[:] = 0.2
+eta._data_with_outhalo[:] = 0.4
 wOverQ._data_with_outhalo[:] = 0.0
+theta._data_with_outhalo[:] = np.pi / 3
+phi._data_with_outhalo[:] = np.pi / 6
 
-# theta = phi = 0
 t0 = 0.0
 t1 = 250.0
 dt = 1.0

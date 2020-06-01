@@ -1,7 +1,7 @@
 import numpy as np
 from sympy import sqrt, sin, cos
 
-from devito import (Grid, Function, TimeFunction, Eq, Operator)
+from devito import (Grid, Function, TimeFunction, Eq, Operator, norm)
 from examples.seismic import RickerSource, TimeAxis
 
 space_order = 8
@@ -21,27 +21,20 @@ grid = Grid(extent=extent, shape=shape, origin=origin, dtype=dtype)
 
 b = Function(name='b', grid=grid, space_order=space_order)
 f = Function(name='f', grid=grid, space_order=space_order)
-phi = Function(name='phi', grid=grid, space_order=space_order)
-theta = Function(name='theta', grid=grid, space_order=space_order)
 vel = Function(name='vel', grid=grid, space_order=space_order)
-eps = Function(name='eps', grid=vel.grid, space_order=space_order)
-eta = Function(name='eta', grid=vel.grid, space_order=space_order)
-wOverQ = Function(name='wOverQ', grid=vel.grid, space_order=space_order)
+eps = Function(name='eps', grid=grid, space_order=space_order)
+eta = Function(name='eta', grid=grid, space_order=space_order)
+wOverQ = Function(name='wOverQ', grid=grid, space_order=space_order)
+theta = Function(name='theta', grid=grid, space_order=space_order)
+phi = Function(name='phi', grid=grid, space_order=space_order)
 
-_b = 1.0
-_f = 0.84
-_eps = 0.2
-_eta = 0.4
-_phi = np.pi / 3
-_theta = np.pi / 6
-
-b.data[:] = _b
-f.data[:] = _f
+b.data[:] = 1.0
+f.data[:] = 0.84
 vel.data[:] = 1.5
-eps.data[:] = _eps
-eta.data[:] = _eta
-phi.data[:] = _phi
-theta.data[:] = _theta
+eps.data[:] = 0.2
+eta.data[:] = 0.5
+theta.data[:] = np.pi / 3
+phi.data[:] = np.pi / 6
 wOverQ.data[:] = 1.0
 
 t0 = 0.0
@@ -55,7 +48,7 @@ t, x, y, z = p0.dimensions
 
 src_coords = np.empty((1, len(shape)), dtype=dtype)
 src_coords[0, :] = [d * (s-1)//2 for d, s in zip(spacing, shape)]
-src = RickerSource(name='src', grid=vel.grid, f0=fpeak, npoint=1, time_range=time_axis)
+src = RickerSource(name='src', grid=grid, f0=fpeak, npoint=1, time_range=time_axis)
 src.coordinates.data[:] = src_coords[:]
 src_term = src.inject(field=p0.forward, expr=src * t.spacing**2 * vel**2 / b)
 
@@ -132,7 +125,7 @@ stencil_p_nl = Eq(p0.forward, update_p_nl)
 stencil_m_nl = Eq(m0.forward, update_m_nl)
 
 dt = time_axis.step
-spacing_map = vel.grid.spacing_map
+spacing_map = grid.spacing_map
 spacing_map.update({t.spacing: dt})
 
 op = Operator([eq_b1m2e, eq_b1mf, eq_b2epfa2, eq_bfes1ma2, eq_bfa2,
@@ -143,6 +136,9 @@ f = open("operator.tti_fact1.c", "w")
 print(op, file=f)
 f.close()
 
-bx = 8
-by = 8
+bx = 16
+by = 6
 op.apply(x0_blk0_size=bx, y0_blk0_size=by)
+
+print("")
+print("norm; %12.6e" % (norm(p0)))

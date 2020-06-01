@@ -106,7 +106,6 @@ f = open(filename, "w")
 for bx in range(bx2, bx1, -dbx):
     for by in range(by2, by1, -dby):
         p0.data[:] = 0
-        m0.data[:] = 0
         s = op.apply(x0_blk0_size=bx, y0_blk0_size=by)
         if rank == 0:
             gpointss = np.sum([v.gpointss for k, v in s.items()])

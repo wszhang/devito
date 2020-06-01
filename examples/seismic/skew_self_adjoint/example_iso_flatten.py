@@ -13,9 +13,6 @@ tmax = 3.0
 fpeak = 0.010
 omega = 2.0 * np.pi * fpeak
 
-# shape = (601, 601, 301)
-# shape = (801, 801, 401)
-# shape = (1001, 1001, 501)
 shape = (1201, 1201, 601)
 spacing = (10.0, 10.0, 10.0)
 origin = tuple([0.0 for s in shape])

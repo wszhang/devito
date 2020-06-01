@@ -1,7 +1,7 @@
 import numpy as np
 from sympy import sqrt
 
-from devito import (Grid, Function, TimeFunction, Eq, Operator)
+from devito import (Grid, Function, TimeFunction, Eq, Operator, norm)
 from examples.seismic import RickerSource, TimeAxis
 
 space_order = 8
@@ -26,16 +26,11 @@ eps = Function(name='eps', grid=vel.grid, space_order=space_order)
 eta = Function(name='eta', grid=vel.grid, space_order=space_order)
 wOverQ = Function(name='wOverQ', grid=vel.grid, space_order=space_order)
 
-_b = 1.0
-_f = 0.84
-_eps = 0.2
-_eta = 0.4
-
-b.data[:] = _b
-f.data[:] = _f
+b.data[:] = 1.0
+f.data[:] = 0.84
 vel.data[:] = 1.5
-eps.data[:] = _eps
-eta.data[:] = _eta
+eps.data[:] = 0.2
+eta.data[:] = 0.4
 wOverQ.data[:] = 1.0
 
 t0 = 0.0
@@ -121,7 +116,10 @@ f = open("operator.vti_fact1.c", "w")
 print(op, file=f)
 f.close()
 
-bx = 8
-by = 8
+bx = 10
+by = 6
 print("\nCache block size (bx,by) = (%3d,%3d)" % (bx, by))
 op.apply(x0_blk0_size=bx, y0_blk0_size=by)
+
+print("")
+print("norm; %12.6e" % (norm(p0)))

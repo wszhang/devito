@@ -5,8 +5,6 @@ from devito import VectorFunction, TensorFunction, NODE
 from examples.seismic import RickerSource, TimeAxis
 
 
-### This will have to go in devito but hacked here for now
-
 def grads(func, side="left"):
     shift = 1 if side == "right" else -1
     print(func, shift)

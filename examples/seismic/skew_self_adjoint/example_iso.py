@@ -1,6 +1,6 @@
 import numpy as np
 
-from devito import (Grid, Function, TimeFunction, Eq, Operator)
+from devito import (Grid, Function, TimeFunction, Eq, Operator, norm)
 from examples.seismic import RickerSource, TimeAxis
 
 space_order = 8
@@ -9,13 +9,9 @@ npad = 20
 qmin = 0.1
 qmax = 1000.0
 tmax = 250.0
-tmax = 3.0
 fpeak = 0.010
 omega = 2.0 * np.pi * fpeak
 
-# shape = (601, 601, 301)
-# shape = (801, 801, 401)
-# shape = (1001, 1001, 501)
 shape = (1201, 1201, 601)
 spacing = (10.0, 10.0, 10.0)
 origin = tuple([0.0 for s in shape])
@@ -92,6 +88,9 @@ f = open("operator.iso.c", "w")
 print(op, file=f)
 f.close()
 
-bx = 8
+bx = 20
 by = 8
 op.apply(x0_blk0_size=bx, y0_blk0_size=by)
+
+print("")
+print("norm; %12.6e" % (norm(p0)))
