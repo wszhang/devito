@@ -1,7 +1,7 @@
 import numpy as np
 from sympy import sqrt, sin, cos
 
-from devito import (Grid, Function, TimeFunction, Eq, Operator)
+from devito import (Grid, Function, TimeFunction, Eq, Operator, norm)
 from examples.seismic import RickerSource, TimeAxis
 
 space_order = 8
@@ -122,3 +122,6 @@ f.close()
 bx = 8
 by = 8
 op.apply(x0_blk0_size=bx, y0_blk0_size=by)
+
+print("")
+print("norm; %12.6e %12.6e" % (norm(p0), norm(m0)))

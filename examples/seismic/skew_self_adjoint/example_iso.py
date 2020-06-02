@@ -8,11 +8,11 @@ dtype = np.float32
 npad = 20
 qmin = 0.1
 qmax = 1000.0
-tmax = 250.0
 fpeak = 0.010
 omega = 2.0 * np.pi * fpeak
 
 shape = (1201, 1201, 601)
+shape = (501, 501, 251)
 spacing = (10.0, 10.0, 10.0)
 origin = tuple([0.0 for s in shape])
 extent = tuple([d * (s - 1) for s, d in zip(shape, spacing)])
@@ -22,12 +22,16 @@ b = Function(name='b', grid=grid, space_order=space_order)
 vel = Function(name='vel', grid=grid, space_order=space_order)
 wOverQ = Function(name='wOverQ', grid=vel.grid, space_order=space_order)
 
+# b._data_with_outhalo[:] = 1.0
+# vel._data_with_outhalo[:] = 1.5
+# wOverQ._data_with_outhalo[:] = 1.0
 b.data[:] = 1.0
 vel.data[:] = 1.5
 wOverQ.data[:] = 1.0
 
 t0 = 0.0
 t1 = 250.0
+t1 = 1000.0
 dt = 1.0
 time_axis = TimeAxis(start=t0, stop=t1, step=dt)
 
@@ -65,32 +69,38 @@ def g3_tilde(field):
     return field.dz(x0=z-z.spacing/2)
 
 
-# works for smaller sizes, seg faults at (1001,1001,501)
-# if you comment out the Y derivatives, works at (1001,1001,501)
 # Time update equation for quasi-P state variable p
-update_p_nl = t.spacing**2 * vel**2 / b * \
-    (g1_tilde(b * g1(p0)) +
-     g2_tilde(b * g2(p0)) +
-     g3_tilde(b * g3(p0))) + \
+update_p = t.spacing**2 * vel**2 / b * \
+    (g1_tilde(b * g1(p0)) + g2_tilde(b * g2(p0)) + g3_tilde(b * g3(p0))) + \
     (2 - t.spacing * wOverQ) * p0 + \
     (t.spacing * wOverQ - 1) * p0.backward
 
-stencil_p_nl = Eq(p0.forward, update_p_nl)
+stencil_p0 = Eq(p0.forward, update_p)
 
 dt = time_axis.step
 spacing_map = vel.grid.spacing_map
 spacing_map.update({t.spacing: dt})
 
-op = Operator([stencil_p_nl, src_term],
+op = Operator([stencil_p0, src_term],
               subs=spacing_map, name='OpExampleIso')
 
 f = open("operator.iso.c", "w")
 print(op, file=f)
 f.close()
 
-bx = 20
+bx = 8
 by = 8
 op.apply(x0_blk0_size=bx, y0_blk0_size=by)
 
 print("")
-print("norm; %12.6e" % (norm(p0)))
+print("bx,by,norm; %3d %3d %12.6e" % (bx, by, norm(p0)))
+
+print("")
+print(time_axis)
+print("nx,ny,nz; %5d %5d %5d" % (shape[0], shape[1], shape[2]))
+
+f = open("data.iso.bin", "wb")
+# d = np.empty(shape, dtype)
+# d = p0.data[1,:,:,:]
+np.save(f, p0.data[1,:,:,:])
+f.close()

@@ -118,8 +118,7 @@ f.close()
 
 bx = 10
 by = 6
-print("\nCache block size (bx,by) = (%3d,%3d)" % (bx, by))
 op.apply(x0_blk0_size=bx, y0_blk0_size=by)
 
 print("")
-print("norm; %12.6e" % (norm(p0)))
+print("norm; %12.6e %12.6e" % (norm(p0), norm(m0)))

@@ -2,7 +2,8 @@ import numpy as np
 import sympy
 from sympy import sqrt, sin, cos, Matrix
 
-from devito import (Grid, Function, TimeFunction, Eq, Operator, div, grad, diag)
+from devito import (Grid, Function, TimeFunction, Eq, 
+                    Operator, div, grad, diag, norm)
 from devito import VectorFunction, TensorFunction, NODE
 from examples.seismic import RickerSource, TimeAxis
 
@@ -127,3 +128,6 @@ f.close()
 bx = 8
 by = 8
 op.apply(x0_blk0_size=bx, y0_blk0_size=by)
+
+print("")
+print("norm; %12.6e %12.6e" % (norm(p0), norm(m0)))

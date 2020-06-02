@@ -1,7 +1,7 @@
 import numpy as np
 from sympy import sqrt
 
-from devito import (Grid, Function, TimeFunction, Eq, Operator)
+from devito import (Grid, Function, TimeFunction, Eq, Operator, norm)
 from examples.seismic import RickerSource, TimeAxis
 
 space_order = 8
@@ -98,14 +98,6 @@ dt = time_axis.step
 spacing_map = grid.spacing_map
 spacing_map.update({t.spacing: dt})
 
-# 2020.05.20
-def callback(n):
-    if n == 1:
-        return 50
-    elif n == 0:
-        return 20
-    assert False
-    
 op = Operator([stencil_p_nl, stencil_m_nl, src_term],
               subs=spacing_map, name='OpExampleVti')
 
@@ -115,5 +107,7 @@ f.close()
 
 bx = 8
 by = 8
-print("\nCache block size (bx,by) = (%3d,%3d)" % (bx, by))
 op.apply(x0_blk0_size=bx, y0_blk0_size=by)
+
+print("")
+print("norm; %12.6e %12.6e" % (norm(p0), norm(m0)))

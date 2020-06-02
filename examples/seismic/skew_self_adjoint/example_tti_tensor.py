@@ -2,12 +2,10 @@ import numpy as np
 import sympy
 from sympy import sqrt, sin, cos, Matrix
 
-from devito import (Grid, Function, TimeFunction, Eq, Operator, div, grad, diag)
+from devito import (Grid, Function, TimeFunction, Eq, Operator, div, grad, diag, norm)
 from devito import VectorFunction, TensorFunction, NODE
 from examples.seismic import RickerSource, TimeAxis
 
-
-### This will have to go in devito but hacked here for now
 
 def grads(func, side="left"):
     shift = 1 if side == "right" else -1
@@ -87,12 +85,15 @@ R = TensorFunction(name="R", grid=grid, components=Rt * Rp, symmetric=False)
 a_ii = [[b * (1 + 2 * eps), 0, 0],
         [0, b * (1 + 2 * eps), 0],
         [0, 0, b * (1 - f * eta**2)]]
+
 b_ii = [[0, 0, 0],
         [0, 0, 0],
         [0, 0, b * f * eta * sqrt(1 - eta**2)]]
+
 c_ii = [[b * (1 - f), 0, 0],
         [0, b * (1 - f), 0],
         [0, 0, b * (1 - f + f * eta**2)]]
+
 A = TensorFunction(name="A", grid=grid, components=a_ii, diagonal=True)
 B = TensorFunction(name="B", grid=grid, components=b_ii, diagonal=True)
 C = TensorFunction(name="C", grid=grid, components=c_ii, diagonal=True)
@@ -127,3 +128,6 @@ f.close()
 bx = 8
 by = 8
 op.apply(x0_blk0_size=bx, y0_blk0_size=by)
+
+print("")
+print("norm; %12.6e %12.6e" % (norm(p0), norm(m0)))

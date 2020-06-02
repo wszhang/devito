@@ -1,32 +1,14 @@
 import numpy as np
 
-from devito import (Grid, Function, TimeFunction, Eq, Operator)
+from devito import (Grid, Function, TimeFunction, Eq, Operator, norm)
 from devito import VectorFunction, TensorFunction, NODE
 from examples.seismic import RickerSource, TimeAxis
-
-
-def grads(func, side="left"):
-    shift = 1 if side == "right" else -1
-    print(func, shift)
-    comps = [getattr(func, 'd%s' % d.name)(x0=d + shift * d.spacing/2)
-             for d in func.dimensions if d.is_Space]
-    return VectorFunction(name='grad_%s' % func.name, space_order=func.space_order,
-                          components=comps, grid=func.grid, staggered=(None, None, None))
-            
-def divs(func, side="left"):
-    shift = 1 if side == "right" else -1
-    print(func, shift)
-    return sum([getattr(func[i], 'd%s' % d.name)(x0=d + shift * d.spacing/2)
-                for i, d in enumerate(func.space_dimensions)])
-
 
 space_order = 8
 dtype = np.float32
 npad = 20
 qmin = 0.1
 qmax = 1000.0
-tmax = 250.0
-tmax = 3.0
 fpeak = 0.010
 omega = 2.0 * np.pi * fpeak
 
@@ -43,6 +25,9 @@ wOverQ = Function(name='wOverQ', grid=vel.grid, space_order=space_order)
 b._data_with_outhalo[:] = 1.0
 vel._data_with_outhalo[:] = 1.5
 wOverQ._data_with_outhalo[:] = 1.0
+# b.data[:] = 1.0
+# vel.data[:] = 1.5
+# wOverQ.data[:] = 1.0
 
 t0 = 0.0
 t1 = 250.0
@@ -58,6 +43,16 @@ src = RickerSource(name='src', grid=vel.grid, f0=fpeak, npoint=1, time_range=tim
 src.coordinates.data[:] = src_coords[:]
 src_term = src.inject(field=p0.forward, expr=src * t.spacing**2 * vel**2 / b)
 
+def grads(func):
+    comps = [getattr(func, 'd%s' % d.name)(x0=d + d.spacing/2)
+             for d in func.dimensions if d.is_Space]
+    return VectorFunction(name='grad_%s' % func.name, space_order=func.space_order,
+                          components=comps, grid=func.grid, staggered=(None, None, None))
+            
+def divs(func):
+    return sum([getattr(func[i], 'd%s' % d.name)(x0=d - d.spacing/2)
+                for i, d in enumerate(func.space_dimensions)])
+
 P = VectorFunction(name="P", grid=grid, space_order=space_order, staggered=(None, None, None))
 
 b_ii = [[b, 0, 0],
@@ -66,9 +61,9 @@ b_ii = [[b, 0, 0],
 
 B = TensorFunction(name="B", grid=grid, components=b_ii, diagonal=True)
 
-eq_P = Eq(P, B * grads(p0, side="right"))
+eq_P = Eq(P, B * grads(p0))
 
-update_p = t.spacing**2 * vel**2 / b * divs(P, side="left") + \
+update_p = t.spacing**2 * vel**2 / b * divs(P) + \
     (2 - t.spacing * wOverQ) * p0 + \
     (t.spacing * wOverQ - 1) * p0.backward
 
@@ -88,3 +83,6 @@ f.close()
 bx = 8
 by = 8
 op.apply(x0_blk0_size=bx, y0_blk0_size=by)
+
+print("")
+print("bx,by,norm; %3d %3d %12.6e" % (bx, by, norm(p0)))
