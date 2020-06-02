@@ -100,7 +100,5 @@ print(time_axis)
 print("nx,ny,nz; %5d %5d %5d" % (shape[0], shape[1], shape[2]))
 
 f = open("data.iso.bin", "wb")
-# d = np.empty(shape, dtype)
-# d = p0.data[1,:,:,:]
 np.save(f, p0.data[1,:,:,:])
 f.close()

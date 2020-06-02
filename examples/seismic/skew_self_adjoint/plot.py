@@ -42,4 +42,6 @@ plt.ylabel("Y Coordinate (m)")
 plt.title("iso_flatten")
 
 plt.tight_layout()
-plt.show(block=True)
+plt.savefig("iso.png")
+plt.show()
+plt.close("all")
