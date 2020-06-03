@@ -127,6 +127,11 @@ f.close()
 
 bx = 8
 by = 8
+
+# 7742
+bx = 64
+by = 50
+
 op.apply(x0_blk0_size=bx, y0_blk0_size=by)
 
 print("")
