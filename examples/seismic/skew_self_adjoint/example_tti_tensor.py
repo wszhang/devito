@@ -126,12 +126,12 @@ print(op, file=f)
 f.close()
 
 # 7502
-bx = 18
-by = 6
+# bx = 32
+# by = 4
 
 # 7742
-# bx = 16
-# by = 4
+bx = 62
+by = 58
 
 op.apply(x0_blk0_size=bx, y0_blk0_size=by)
 

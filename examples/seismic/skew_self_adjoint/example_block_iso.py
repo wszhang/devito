@@ -93,11 +93,11 @@ comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
 bx1 = 0
-bx2 = 64
-dbx = 2
+bx2 = 32
+dbx = 1
 by1 = 0
-by2 = 64
-dby = 2
+by2 = 32
+dby = 1
 
 f = open(filename, "w")
 
