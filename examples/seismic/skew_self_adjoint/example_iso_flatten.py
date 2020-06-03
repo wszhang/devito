@@ -65,22 +65,30 @@ def g3_tilde(field):
     return field.dz(x0=z-z.spacing/2)
 
 
-# Time update equation for quasi-P state variable p
-update_p = t.spacing**2 * vel**2 / b * \
-    (g1_tilde(b * g1(p0)) + g2_tilde(b * g2(p0)) + g3_tilde(b * g3(p0))) + \
+p_x = Function(name='p_x', grid=grid, space_order=space_order)
+p_y = Function(name='p_y', grid=grid, space_order=space_order)
+p_z = Function(name='p_z', grid=grid, space_order=space_order)
+
+update_px = Eq(p_x, g1_tilde(b * g1(p0)))
+update_py = Eq(p_y, g2_tilde(b * g2(p0)))
+update_pz = Eq(p_z, g3_tilde(b * g3(p0)))
+
+update_p0 = t.spacing**2 * vel**2 / b * \
+    (p_x + p_y + p_z) + \
     (2 - t.spacing * wOverQ) * p0 + \
     (t.spacing * wOverQ - 1) * p0.backward
 
-stencil_p0 = Eq(p0.forward, update_p)
+stencil_p0 = Eq(p0.forward, update_p0)
 
 dt = time_axis.step
 spacing_map = vel.grid.spacing_map
 spacing_map.update({t.spacing: dt})
 
-op = Operator([stencil_p0, src_term],
-              subs=spacing_map, name='OpExampleIso')
+op = Operator([update_px, update_py, update_pz, stencil_p0, src_term],
+              subs=spacing_map, name='OpExampleIsoFlatten')
 
-f = open("operator.iso.c", "w")
+print(op.args)
+f = open("operator.iso_flatten.c", "w")
 print(op, file=f)
 f.close()
 
@@ -95,6 +103,6 @@ print("")
 print(time_axis)
 print("nx,ny,nz; %5d %5d %5d" % (shape[0], shape[1], shape[2]))
 
-f = open("data.iso.bin", "wb")
+f = open("data.iso_flatten.bin", "wb")
 np.save(f, p0.data[1,:,:,:])
 f.close()
