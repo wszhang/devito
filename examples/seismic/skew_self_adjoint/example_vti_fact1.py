@@ -116,14 +116,15 @@ f = open("operator.vti_fact1.c", "w")
 print(op, file=f)
 f.close()
 
+# 7502
 bx = 10
 by = 6
 
 # 7742
-bx = 12
-by = 4
+# bx = 16
+# by = 4
 
 op.apply(x0_blk0_size=bx, y0_blk0_size=by)
 
 print("")
-print("norm; %12.6e %12.6e" % (norm(p0), norm(m0)))
+print("bx,by,norm; %3d %3d %12.6e %12.6e" % (bx, by, norm(p0), norm(m0)))
