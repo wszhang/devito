@@ -125,7 +125,7 @@ spacing_map = grid.spacing_map
 spacing_map.update({t.spacing: dt})
 
 op = Operator([eq_b1m2e, eq_b1mf, eq_b2epfa2, eq_bfes1ma2, eq_bfa2,
-               eq_pxyz, eq_p3, eq_mxyz, eq_m3, 
+               eq_pxyz, eq_mxyz, eq_p3, eq_m3, 
                stencil_p, stencil_m, src_term],
               subs=spacing_map, name='OpExampleTtiFact2')
 
