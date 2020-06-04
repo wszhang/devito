@@ -130,7 +130,7 @@ f.close()
 # by = 7
 
 # 7742
-bx = 44
+bx = 62
 by = 60
 
 op.apply(x0_blk0_size=bx, y0_blk0_size=by)
