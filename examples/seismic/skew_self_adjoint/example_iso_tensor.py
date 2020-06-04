@@ -38,29 +38,20 @@ p0 = TimeFunction(name='p0', grid=grid, time_order=2, space_order=space_order)
 t, x, y, z = p0.dimensions
 
 src_coords = np.empty((1, len(shape)), dtype=dtype)
-src_coords[0, :] = [d * (s-1)//2 for d, s in zip(spacing, shape)]
+# src_coords[0, :] = [d * (s-1)//2 for d, s in zip(spacing, shape)]
+src_coords[0, :] = [d * (s-1)//2 + 100 for d, s in zip(spacing, shape)]
 src = RickerSource(name='src', grid=vel.grid, f0=fpeak, npoint=1, time_range=time_axis)
 src.coordinates.data[:] = src_coords[:]
 src_term = src.inject(field=p0.forward, expr=src * t.spacing**2 * vel**2 / b)
 
-# def grads(func):
-#     comps = [getattr(func, 'd%s' % d.name)(x0=d + d.spacing/2)
-#              for d in func.dimensions if d.is_Space]
-#     return VectorFunction(name='grad_%s' % func.name, space_order=func.space_order,
-#                           components=comps, grid=func.grid, staggered=(None, None, None))
-            
-# def divs(func):
-#     return sum([getattr(func[i], 'd%s' % d.name)(x0=d - d.spacing/2)
-#                 for i, d in enumerate(func.space_dimensions)])
-
 def grads(func):
-    comps = [getattr(func, 'd%s' % d.name)(x0=d + d.spacing)
+    comps = [getattr(func, 'd%s' % d.name)(x0=d + d.spacing/2)
              for d in func.dimensions if d.is_Space]
     return VectorFunction(name='grad_%s' % func.name, space_order=func.space_order,
                           components=comps, grid=func.grid, staggered=(None, None, None))
             
 def divs(func):
-    return sum([getattr(func[i], 'd%s' % d.name)(x0=d - d.spacing)
+    return sum([getattr(func[i], 'd%s' % d.name)(x0=d - d.spacing/2)
                 for i, d in enumerate(func.space_dimensions)])
 
 P = VectorFunction(name="P", grid=grid, space_order=space_order, staggered=(None, None, None))

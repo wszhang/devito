@@ -47,7 +47,8 @@ m0 = TimeFunction(name='m0', grid=grid, time_order=2, space_order=space_order)
 t, x, y, z = p0.dimensions
 
 src_coords = np.empty((1, len(shape)), dtype=dtype)
-src_coords[0, :] = [d * (s-1)//2 for d, s in zip(spacing, shape)]
+# src_coords[0, :] = [d * (s-1)//2 for d, s in zip(spacing, shape)]
+src_coords[0, :] = [d * (s-1)//2 + 100 for d, s in zip(spacing, shape)]
 src = RickerSource(name='src', grid=grid, f0=fpeak, npoint=1, time_range=time_axis)
 src.coordinates.data[:] = src_coords[:]
 src_term = src.inject(field=p0.forward, expr=src * t.spacing**2 * vel**2 / b)

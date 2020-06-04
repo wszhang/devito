@@ -7,21 +7,14 @@ from devito import (Grid, Function, TimeFunction, Eq,
 from devito import VectorFunction, TensorFunction, NODE
 from examples.seismic import RickerSource, TimeAxis
 
-
-### This will have to go in devito but hacked here for now
-
-def grads(func, side="left"):
-    shift = 1 if side == "right" else -1
-    print(func, shift)
-    comps = [getattr(func, 'd%s' % d.name)(x0=d + shift * d.spacing/2)
+def grads(func):
+    comps = [getattr(func, 'd%s' % d.name)(x0=d + d.spacing/2)
              for d in func.dimensions if d.is_Space]
     return VectorFunction(name='grad_%s' % func.name, space_order=func.space_order,
                           components=comps, grid=func.grid, staggered=(None, None, None))
             
-def divs(func, side="left"):
-    shift = 1 if side == "right" else -1
-    print(func, shift)
-    return sum([getattr(func[i], 'd%s' % d.name)(x0=d + shift * d.spacing/2)
+def divs(func):
+    return sum([getattr(func[i], 'd%s' % d.name)(x0=d - d.spacing/2)
                 for i, d in enumerate(func.space_dimensions)])
 
 space_order = 8
@@ -64,11 +57,10 @@ p0 = TimeFunction(name='p0', grid=grid, time_order=2, space_order=space_order)
 m0 = TimeFunction(name='m0', grid=grid, time_order=2, space_order=space_order)
 
 src_coords = np.empty((1, len(shape)), dtype=dtype)
-src_coords[0, :] = [d * (s-1)//2 for d, s in zip(spacing, shape)]
-
+# src_coords[0, :] = [d * (s-1)//2 for d, s in zip(spacing, shape)]
+src_coords[0, :] = [d * (s-1)//2 + 100 for d, s in zip(spacing, shape)]
 src = RickerSource(name='src', grid=vel.grid, f0=fpeak, npoint=1, time_range=time_axis)
 src.coordinates.data[:] = src_coords[:]
-
 src_term = src.inject(field=p0.forward, expr=src * t.spacing**2 * vel**2 / b)
 
 # Vector for gradients
@@ -99,15 +91,15 @@ B = TensorFunction(name="B", grid=grid, components=b_ii, diagonal=True)
 C = TensorFunction(name="C", grid=grid, components=c_ii, diagonal=True)
 
 # P_I, M_I
-eq_PI = Eq(P_I, R.T * (A * R * grads(p0, side="right") + B * R * grads(m0, side="right")))
-eq_MI = Eq(M_I, R.T * (B * R * grads(p0, side="right") + C * R * grads(m0, side="right")))
+eq_PI = Eq(P_I, R.T * (A * R * grads(p0) + B * R * grads(m0)))
+eq_MI = Eq(M_I, R.T * (B * R * grads(p0) + C * R * grads(m0)))
 # Time update equation for quasi-P state variable p
-update_p_nl = t.spacing**2 * vel**2 / b * divs(P_I, side="left") + \
+update_p_nl = t.spacing**2 * vel**2 / b * divs(P_I) + \
     (2 - t.spacing * wOverQ) * p0 + \
     (t.spacing * wOverQ - 1) * p0.backward
 
 # Time update equation for quasi-S state variable m
-update_m_nl = t.spacing**2 * vel**2 / b * divs(M_I, side="left") + \
+update_m_nl = t.spacing**2 * vel**2 / b * divs(M_I) + \
     (2 - t.spacing * wOverQ) * m0 + \
     (t.spacing * wOverQ - 1) * m0.backward
 

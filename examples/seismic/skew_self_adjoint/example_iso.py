@@ -11,8 +11,7 @@ qmax = 1000.0
 fpeak = 0.010
 omega = 2.0 * np.pi * fpeak
 
-# shape = (1201, 1201, 601)
-shape = (401, 401, 201)
+shape = (1201, 1201, 601)
 spacing = (10.0, 10.0, 10.0)
 origin = tuple([0.0 for s in shape])
 extent = tuple([d * (s - 1) for s, d in zip(shape, spacing)])
@@ -28,7 +27,6 @@ wOverQ.data[:] = 1.0
 
 t0 = 0.0
 t1 = 250.0
-t1 = 50.0
 dt = 1.0
 time_axis = TimeAxis(start=t0, stop=t1, step=dt)
 
@@ -36,7 +34,8 @@ p0 = TimeFunction(name='p0', grid=grid, time_order=2, space_order=space_order)
 t, x, y, z = p0.dimensions
 
 src_coords = np.empty((1, len(shape)), dtype=dtype)
-src_coords[0, :] = [d * (s-1)//2 for d, s in zip(spacing, shape)]
+# src_coords[0, :] = [d * (s-1)//2 for d, s in zip(spacing, shape)]
+src_coords[0, :] = [d * (s-1)//2 + 100 for d, s in zip(spacing, shape)]
 src = RickerSource(name='src', grid=vel.grid, f0=fpeak, npoint=1, time_range=time_axis)
 src.coordinates.data[:] = src_coords[:]
 src_term = src.inject(field=p0.forward, expr=src * t.spacing**2 * vel**2 / b)
@@ -90,25 +89,25 @@ bx = 18; by = 19; # 7502
 
 op.apply(x0_blk0_size=bx, y0_blk0_size=by)
 
-# print("")
-# print("bx,by,norm; %3d %3d %12.6e" % (bx, by, norm(p0)))
+print("")
+print("bx,by,norm; %3d %3d %12.6e" % (bx, by, norm(p0)))
 
-# print("")
-# print(time_axis)
-# print("nx,ny,nz; %5d %5d %5d" % (shape[0], shape[1], shape[2]))
+print("")
+print(time_axis)
+print("nx,ny,nz; %5d %5d %5d" % (shape[0], shape[1], shape[2]))
 
-# f = open("data.iso.bin", "wb")
-# np.save(f, p0.data[1,:,:,:])
-# f.close()
+f = open("data.iso.bin", "wb")
+np.save(f, p0.data[1,:,:,:])
+f.close()
 
-from mpi4py import MPI
-comm = MPI.COMM_WORLD
-rank = comm.Get_rank()
-ranknorm = np.empty(1, np.float64)
-sumnorm = np.empty(1, np.float64)
-ranknorm[0] = np.linalg.norm(p0.data)**2
-comm.Reduce(ranknorm, sumnorm, op=MPI.SUM, root=0)
-mynorm = np.sqrt(sumnorm[0])
-print("rank,ranknorm,sumnorm,new norm,devito norm; %2d %12.6f %12.6f %12.6f %12.6f" % 
-      (rank, ranknorm[0], sumnorm[0], mynorm, norm(p0)))
+# from mpi4py import MPI
+# comm = MPI.COMM_WORLD
+# rank = comm.Get_rank()
+# ranknorm = np.empty(1, np.float64)
+# sumnorm = np.empty(1, np.float64)
+# ranknorm[0] = np.linalg.norm(p0.data)**2
+# comm.Reduce(ranknorm, sumnorm, op=MPI.SUM, root=0)
+# mynorm = np.sqrt(sumnorm[0])
+# print("rank,ranknorm,sumnorm,new norm,devito norm; %2d %12.6f %12.6f %12.6f %12.6f" % 
+#       (rank, ranknorm[0], sumnorm[0], mynorm, norm(p0)))
 
