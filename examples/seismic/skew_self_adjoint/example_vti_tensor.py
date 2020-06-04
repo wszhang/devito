@@ -125,13 +125,8 @@ f = open("operator.vti_tensor.c", "w")
 print(op, file=f)
 f.close()
 
-# 7502
-# bx = 32
-# by = 7
-
-# 7742
-bx = 62
-by = 60
+bx = 32; by = 7; # 7502
+# bx = 16; by = 4; # 7742
 
 op.apply(x0_blk0_size=bx, y0_blk0_size=by)
 

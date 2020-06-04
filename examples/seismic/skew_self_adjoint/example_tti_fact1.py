@@ -120,13 +120,8 @@ f = open("operator.tti_fact1.c", "w")
 print(op, file=f)
 f.close()
 
-# 7502
-# bx = 29
-# by = 15
-
-# 7742
-bx = 16
-by = 4
+bx = 14; by = 7; # 7502
+# bx = 16; by = 4; # 7742
 
 op.apply(x0_blk0_size=bx, y0_blk0_size=by)
 
