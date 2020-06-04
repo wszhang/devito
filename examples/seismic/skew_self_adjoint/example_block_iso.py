@@ -25,11 +25,9 @@ b = Function(name='b', grid=grid, space_order=space_order)
 vel = Function(name='vel', grid=grid, space_order=space_order)
 wOverQ = Function(name='wOverQ', grid=grid, space_order=space_order)
 
-_v = 1.5
-_b = 1.0
-
-b.data[:] = _b
-vel.data[:] = _v
+b.data[:] = 1.0
+vel.data[:] = 1.5
+wOverQ.data[:] = 1.0
 
 t0 = 0.0
 t1 = 12.0

@@ -75,7 +75,7 @@ def g3_tilde(field):
 
 # Functions  for additional factorization
 b1mf = Function(name='b1mf', grid=grid, space_order=space_order)
-b1m2e = Function(name='b1m2e', grid=grid, space_order=space_order)
+b1p2e = Function(name='b1p2e', grid=grid, space_order=space_order)
 b1mfa2 = Function(name='b1mfa2', grid=grid, space_order=space_order)
 b1mfpfa2 = Function(name='b1mfpfa2', grid=grid, space_order=space_order)
 bfes1ma2 = Function(name='bfes1ma2', grid=grid, space_order=space_order)
@@ -89,13 +89,13 @@ m_z = Function(name='m_z', grid=grid, space_order=space_order)
 
 # Equations for additional factorization
 eq_b1mf = Eq(b1mf, b * (1 - f))
-eq_b1m2e = Eq(b1m2e, b * (1 + 2 * eps))
+eq_b1p2e = Eq(b1p2e, b * (1 + 2 * eps))
 eq_b1mfa2 = Eq(b1mfa2, b * (1 - f * eta**2))
 eq_b1mfpfa2 = Eq(b1mfpfa2, b * (1 - f + f * eta**2))
 eq_bfes1ma2 = Eq(bfes1ma2, b * f * eta * sqrt(1 - eta**2))
 
-eq_px = Eq(p_x, g1_tilde(b1m2e * g1(p0)))
-eq_py = Eq(p_y, g2_tilde(b1m2e * g2(p0)))
+eq_px = Eq(p_x, g1_tilde(b1p2e * g1(p0)))
+eq_py = Eq(p_y, g2_tilde(b1p2e * g2(p0)))
 eq_pz = Eq(p_z, g3_tilde(b1mfa2 * g3(p0) + bfes1ma2 * g3(m0)))
 
 eq_mx = Eq(m_x, g1_tilde(b1mf * g1(m0)))
@@ -117,7 +117,7 @@ dt = time_axis.step
 spacing_map = vel.grid.spacing_map
 spacing_map.update({t.spacing: dt})
 
-op = Operator([eq_b1mf, eq_b1m2e, eq_b1mfa2, eq_b1mfpfa2, eq_bfes1ma2,
+op = Operator([eq_b1mf, eq_b1p2e, eq_b1mfa2, eq_b1mfpfa2, eq_bfes1ma2,
                eq_px, eq_py, eq_pz, eq_mx, eq_my, eq_mz, 
                stencil_p_nl, stencil_m_nl, src_term],
               subs=spacing_map, name='OpExampleVtiFact2')
@@ -133,3 +133,14 @@ op.apply(x0_blk0_size=bx, y0_blk0_size=by)
 
 print("")
 print("bx,by,norm; %3d %3d %12.6e %12.6e" % (bx, by, norm(p0), norm(m0)))
+
+# from mpi4py import MPI
+# comm = MPI.COMM_WORLD
+# rank = comm.Get_rank()
+# ranknorm = np.empty(1, np.float64)
+# sumnorm = np.empty(1, np.float64)
+# ranknorm[0] = np.linalg.norm(p0.data)**2
+# comm.Reduce(ranknorm, sumnorm, op=MPI.SUM, root=0)
+# mynorm = np.sqrt(sumnorm[0])
+# print("rank,ranknorm,sumnorm,new norm,devito norm; %2d %12.6f %12.6f %12.6f %12.6f" % 
+#       (rank, ranknorm[0], sumnorm[0], mynorm, norm(p0)))

@@ -32,7 +32,7 @@ b.data[:] = 1.0
 f.data[:] = 0.84
 vel.data[:] = 1.5
 eps.data[:] = 0.2
-eta.data[:] = 0.5
+eta.data[:] = 0.4
 theta.data[:] = np.pi / 3
 phi.data[:] = np.pi / 6
 wOverQ.data[:] = 1.0
@@ -74,14 +74,14 @@ def g3_tilde(field, phi, theta):
 
 
 # Functions for additional factorization
-b1m2e = Function(name='b1m2e', grid=grid, space_order=space_order)
+b1p2e = Function(name='b1p2e', grid=grid, space_order=space_order)
 b1mf = Function(name='b1mf', grid=grid, space_order=space_order)
 b2epfa2 = Function(name='b2epfa2', grid=grid, space_order=space_order)
 bfes1ma2 = Function(name='bfes1ma2', grid=grid, space_order=space_order)
 bfa2 = Function(name='bfa2', grid=grid, space_order=space_order)
 
 # Equations for additional factorization
-eq_b1m2e = Eq(b1m2e, b * (1 + 2 * eps))
+eq_b1p2e = Eq(b1p2e, b * (1 + 2 * eps))
 eq_b1mf = Eq(b1mf, b * (1 - f))
 eq_b2epfa2 = Eq(b2epfa2, b * (2 * eps + f * eta**2))
 eq_bfes1ma2 = Eq(bfes1ma2, b * f * eta * sqrt(1 - eta**2))
@@ -89,9 +89,9 @@ eq_bfa2 = Eq(bfa2, b * f * eta**2)
 
 # Time update equation for quasi-P state variable p
 update_p = t.spacing**2 * vel**2 / b * \
-    (my_d_tilde(b1m2e * my_d(p0, x), x) +
-     my_d_tilde(b1m2e * my_d(p0, y), y) +
-     my_d_tilde(b1m2e * my_d(p0, z), z) +
+    (my_d_tilde(b1p2e * my_d(p0, x), x) +
+     my_d_tilde(b1p2e * my_d(p0, y), y) +
+     my_d_tilde(b1p2e * my_d(p0, z), z) +
      g3_tilde(- b2epfa2 * g3(p0, phi, theta) +
               bfes1ma2 * g3(m0, phi, theta), phi, theta)) + \
     (2 - t.spacing * wOverQ) * p0 + (t.spacing * wOverQ - 1) * p0.backward
@@ -105,6 +105,25 @@ update_m = t.spacing**2 * vel**2 / b * \
               bfa2 * g3(m0, phi, theta),  phi, theta)) + \
     (2 - t.spacing * wOverQ) * m0 + (t.spacing * wOverQ - 1) * m0.backward
 
+"""
+update_p = t.spacing**2 * vel**2 / b * \
+    (g1_tilde(b * (1 + 2 * eps) * g1(p0, phi, theta), phi, theta) +
+     g2_tilde(b * (1 + 2 * eps) * g2(p0, phi, theta), phi, theta) +
+     g3_tilde(b * (1 - f * eta**2) * g3(p0, phi, theta) +
+              b * f * eta * sqrt(1 - eta**2) * g3(m0, phi, theta), phi, theta)) + \
+    (2 - t.spacing * wOverQ) * p0 + \
+    (t.spacing * wOverQ - 1) * p0.backward
+
+# Time update equation for quasi-S state variable m
+update_m = t.spacing**2 * vel**2 / b * \
+    (g1_tilde(b * (1 - f) * g1(m0, phi, theta), phi, theta) +
+     g2_tilde(b * (1 - f) * g2(m0, phi, theta), phi, theta) +
+     g3_tilde(b * (1 - f + f * eta**2) * g3(m0, phi, theta) +
+              b * f * eta * sqrt(1 - eta**2) * g3(p0, phi, theta), phi, theta)) + \
+    (2 - t.spacing * wOverQ) * m0 + \
+    (t.spacing * wOverQ - 1) * m0.backward
+"""
+
 stencil_p = Eq(p0.forward, update_p)
 stencil_m = Eq(m0.forward, update_m)
 
@@ -112,7 +131,7 @@ dt = time_axis.step
 spacing_map = grid.spacing_map
 spacing_map.update({t.spacing: dt})
 
-op = Operator([eq_b1m2e, eq_b1mf, eq_b2epfa2, eq_bfes1ma2, eq_bfa2,
+op = Operator([eq_b1p2e, eq_b1mf, eq_b2epfa2, eq_bfes1ma2, eq_bfa2,
                stencil_p, stencil_m, src_term],
               subs=spacing_map, name='OpExampleTtiFact1')
 
@@ -120,7 +139,7 @@ f = open("operator.tti_fact1.c", "w")
 print(op, file=f)
 f.close()
 
-bx = 14; by = 7; # 7502
+bx = 16; by = 7; # 7502
 # bx = 16; by = 4; # 7742
 
 op.apply(x0_blk0_size=bx, y0_blk0_size=by)

@@ -75,22 +75,22 @@ def g3_tilde(field):
 
 # Functions  for additional factorization
 b1mf = Function(name='b1mf', grid=grid, space_order=space_order)
-b1m2e = Function(name='b1m2e', grid=grid, space_order=space_order)
+b1p2e = Function(name='b1p2e', grid=grid, space_order=space_order)
 b1mfa2 = Function(name='b1mfa2', grid=grid, space_order=space_order)
 b1mfpfa2 = Function(name='b1mfpfa2', grid=grid, space_order=space_order)
 bfes1ma2 = Function(name='bfes1ma2', grid=grid, space_order=space_order)
 
 # Equations for additional factorization
 eq_b1mf = Eq(b1mf, b * (1 - f))
-eq_b1m2e = Eq(b1m2e, b * (1 + 2 * eps))
+eq_b1p2e = Eq(b1p2e, b * (1 + 2 * eps))
 eq_b1mfa2 = Eq(b1mfa2, b * (1 - f * eta**2))
 eq_b1mfpfa2 = Eq(b1mfpfa2, b * (1 - f + f * eta**2))
 eq_bfes1ma2 = Eq(bfes1ma2, b * f * eta * sqrt(1 - eta**2))
 
 # Time update equation for quasi-P state variable p
 update_p_nl = t.spacing**2 * vel**2 / b * \
-    (g1_tilde(b1m2e * g1(p0)) +
-     g2_tilde(b1m2e * g2(p0)) +
+    (g1_tilde(b1p2e * g1(p0)) +
+     g2_tilde(b1p2e * g2(p0)) +
      g3_tilde(b1mfa2 * g3(p0) + bfes1ma2 * g3(m0))) + \
     (2 - t.spacing * wOverQ) * p0 + (t.spacing * wOverQ - 1) * p0.backward
 
@@ -108,7 +108,7 @@ dt = time_axis.step
 spacing_map = vel.grid.spacing_map
 spacing_map.update({t.spacing: dt})
 
-op = Operator([eq_b1mf, eq_b1m2e, eq_b1mfa2, eq_b1mfpfa2, eq_bfes1ma2,
+op = Operator([eq_b1mf, eq_b1p2e, eq_b1mfa2, eq_b1mfpfa2, eq_bfes1ma2,
                stencil_p_nl, stencil_m_nl, src_term],
               subs=spacing_map, name='OpExampleVtiFact1')
 

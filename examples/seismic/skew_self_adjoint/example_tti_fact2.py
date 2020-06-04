@@ -32,7 +32,7 @@ b.data[:] = 1.0
 f.data[:] = 0.84
 vel.data[:] = 1.5
 eps.data[:] = 0.2
-eta.data[:] = 0.5
+eta.data[:] = 0.4
 theta.data[:] = np.pi / 3
 phi.data[:] = np.pi / 6
 wOverQ.data[:] = 1.0
@@ -74,14 +74,14 @@ def g3_tilde(field, phi, theta):
 
 
 # Functions for additional factorization
-b1m2e = Function(name='b1m2e', grid=grid, space_order=space_order)
+b1p2e = Function(name='b1p2e', grid=grid, space_order=space_order)
 b1mf = Function(name='b1mf', grid=grid, space_order=space_order)
 b2epfa2 = Function(name='b2epfa2', grid=grid, space_order=space_order)
 bfes1ma2 = Function(name='bfes1ma2', grid=grid, space_order=space_order)
 bfa2 = Function(name='bfa2', grid=grid, space_order=space_order)
 
 # Equations for additional factorization
-eq_b1m2e = Eq(b1m2e, b * (1 + 2 * eps))
+eq_b1p2e = Eq(b1p2e, b * (1 + 2 * eps))
 eq_b1mf = Eq(b1mf, b * (1 - f))
 eq_b2epfa2 = Eq(b2epfa2, b * (2 * eps + f * eta**2))
 eq_bfes1ma2 = Eq(bfes1ma2, b * f * eta * sqrt(1 - eta**2))
@@ -94,20 +94,20 @@ m_xyz = Function(name='m_xyz', grid=grid, space_order=space_order)
 m_3 = Function(name='m_3', grid=grid, space_order=space_order)
 
 eq_pxyz = Eq(p_xyz, 
-             my_d_tilde(b1m2e * my_d(p0, x), x) +
-             my_d_tilde(b1m2e * my_d(p0, y), y) +
-             my_d_tilde(b1m2e * my_d(p0, z), z))
+             my_d_tilde(b1p2e * my_d(p0, x), x) +
+             my_d_tilde(b1p2e * my_d(p0, y), y) +
+             my_d_tilde(b1p2e * my_d(p0, z), z))
 
 eq_mxyz = Eq(m_xyz, 
              my_d_tilde(b1mf * my_d(m0, x), x) +
              my_d_tilde(b1mf * my_d(m0, y), y) +
              my_d_tilde(b1mf * my_d(m0, z), z))
 
-eq_p3 = Eq(p_3, - b2epfa2 * g3(p0, phi, theta) +
-           bfes1ma2 * g3(m0, phi, theta), phi, theta)
+eq_p3 = Eq(p_3, g3_tilde(- b2epfa2 * g3(p0, phi, theta) +
+                         bfes1ma2 * g3(m0, phi, theta), phi, theta), phi, theta)
 
-eq_m3 = Eq(m_3, + bfes1ma2 * g3(p0, phi, theta) + 
-           bfa2 * g3(m0, phi, theta),  phi, theta)
+eq_m3 = Eq(m_3, g3_tilde(+ bfes1ma2 * g3(p0, phi, theta) + 
+                         bfa2 * g3(m0, phi, theta),  phi, theta), phi, theta)
 
 # Time update equation for quasi-P state variable p
 update_p = t.spacing**2 * vel**2 / b * (p_xyz + p_3) + \
@@ -124,7 +124,7 @@ dt = time_axis.step
 spacing_map = grid.spacing_map
 spacing_map.update({t.spacing: dt})
 
-op = Operator([eq_b1m2e, eq_b1mf, eq_b2epfa2, eq_bfes1ma2, eq_bfa2,
+op = Operator([eq_b1p2e, eq_b1mf, eq_b2epfa2, eq_bfes1ma2, eq_bfa2,
                eq_pxyz, eq_mxyz, eq_p3, eq_m3, 
                stencil_p, stencil_m, src_term],
               subs=spacing_map, name='OpExampleTtiFact2')
@@ -133,7 +133,7 @@ f = open("operator.tti_fact2.c", "w")
 print(op, file=f)
 f.close()
 
-bx = 14; by = 7; # 7502
+bx = 16; by = 7; # 7502
 # bx = 16; by = 4; # 7742
 
 op.apply(x0_blk0_size=bx, y0_blk0_size=by)

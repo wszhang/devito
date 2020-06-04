@@ -11,8 +11,8 @@ qmax = 1000.0
 fpeak = 0.010
 omega = 2.0 * np.pi * fpeak
 
-shape = (1201, 1201, 601)
-shape = (501, 501, 251)
+# shape = (1201, 1201, 601)
+shape = (401, 401, 201)
 spacing = (10.0, 10.0, 10.0)
 origin = tuple([0.0 for s in shape])
 extent = tuple([d * (s - 1) for s, d in zip(shape, spacing)])
@@ -28,6 +28,7 @@ wOverQ.data[:] = 1.0
 
 t0 = 0.0
 t1 = 250.0
+t1 = 50.0
 dt = 1.0
 time_axis = TimeAxis(start=t0, stop=t1, step=dt)
 
@@ -84,18 +85,30 @@ f = open("operator.iso.c", "w")
 print(op, file=f)
 f.close()
 
-bx = 16; by = 9; # 7502
+bx = 18; by = 19; # 7502
 # bx = 16; by = 4; # 7742
 
 op.apply(x0_blk0_size=bx, y0_blk0_size=by)
 
-print("")
-print("bx,by,norm; %3d %3d %12.6e" % (bx, by, norm(p0)))
+# print("")
+# print("bx,by,norm; %3d %3d %12.6e" % (bx, by, norm(p0)))
 
-print("")
-print(time_axis)
-print("nx,ny,nz; %5d %5d %5d" % (shape[0], shape[1], shape[2]))
+# print("")
+# print(time_axis)
+# print("nx,ny,nz; %5d %5d %5d" % (shape[0], shape[1], shape[2]))
 
-f = open("data.iso.bin", "wb")
-np.save(f, p0.data[1,:,:,:])
-f.close()
+# f = open("data.iso.bin", "wb")
+# np.save(f, p0.data[1,:,:,:])
+# f.close()
+
+from mpi4py import MPI
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+ranknorm = np.empty(1, np.float64)
+sumnorm = np.empty(1, np.float64)
+ranknorm[0] = np.linalg.norm(p0.data)**2
+comm.Reduce(ranknorm, sumnorm, op=MPI.SUM, root=0)
+mynorm = np.sqrt(sumnorm[0])
+print("rank,ranknorm,sumnorm,new norm,devito norm; %2d %12.6f %12.6f %12.6f %12.6f" % 
+      (rank, ranknorm[0], sumnorm[0], mynorm, norm(p0)))
+

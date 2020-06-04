@@ -33,9 +33,9 @@ f.data[:] = 0.84
 vel.data[:] = 1.5
 eps.data[:] = 0.2
 eta.data[:] = 0.4
-wOverQ.data[:] = 1.0
 theta.data[:] = np.pi / 3
 phi.data[:] = np.pi / 6
+wOverQ.data[:] = 1.0
 
 t0 = 0.0
 t1 = 250.0
@@ -119,7 +119,7 @@ f = open("operator.tti.c", "w")
 print(op, file=f)
 f.close()
 
-bx = 14; by = 7; # 7502
+bx = 16; by = 7; # 7502
 # bx = 16; by = 4; # 7742
 
 op.apply(x0_blk0_size=bx, y0_blk0_size=by)

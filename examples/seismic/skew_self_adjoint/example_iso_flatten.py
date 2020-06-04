@@ -12,7 +12,6 @@ fpeak = 0.010
 omega = 2.0 * np.pi * fpeak
 
 shape = (1201, 1201, 601)
-shape = (501, 501, 251)
 spacing = (10.0, 10.0, 10.0)
 origin = tuple([0.0 for s in shape])
 extent = tuple([d * (s - 1) for s, d in zip(shape, spacing)])
@@ -92,7 +91,7 @@ f = open("operator.iso_flatten.c", "w")
 print(op, file=f)
 f.close()
 
-bx = 16; by = 9; # 7502
+bx = 18; by = 19; # 7502
 # bx = 16; by = 4; # 7742
 
 op.apply(x0_blk0_size=bx, y0_blk0_size=by)
