@@ -40,15 +40,6 @@ wOverQ = Function(name='wOverQ', grid=grid, space_order=space_order)
 theta = Function(name='theta', grid=grid, space_order=space_order)
 phi = Function(name='phi', grid=grid, space_order=space_order)
 
-b.data[:] = 1.0
-f.data[:] = 0.84
-vel.data[:] = 1.5
-eps.data[:] = 0.2
-eta.data[:] = 0.4
-theta.data[:] = np.pi / 3
-phi.data[:] = np.pi / 6
-wOverQ.data[:] = 1.0
-
 # b._data_with_outhalo[:] = 1.0
 # f._data_with_outhalo[:] = 0.84
 # vel._data_with_outhalo[:] = 1.5
@@ -57,6 +48,14 @@ wOverQ.data[:] = 1.0
 # theta._data_with_outhalo[:] = np.pi / 3
 # phi._data_with_outhalo[:] = np.pi / 6
 # wOverQ._data_with_outhalo[:] = 0.0
+b.data[:] = 1.0
+f.data[:] = 0.84
+vel.data[:] = 1.5
+eps.data[:] = 0.2
+eta.data[:] = 0.4
+theta.data[:] = np.pi / 3
+phi.data[:] = np.pi / 6
+wOverQ.data[:] = 1.0
 
 t0 = 0.0
 t1 = 250.0
@@ -129,8 +128,8 @@ f = open("operator.tti_tensor.c", "w")
 print(op, file=f)
 f.close()
 
-bx = 32; by = 5; # 7502
-# bx = 16; by = 4; # 7742
+# bx = 32; by = 5; # 7502
+bx = 16; by = 4; # 7742
 
 op.apply(x0_blk0_size=bx, y0_blk0_size=by)
 

@@ -39,12 +39,18 @@ eps = Function(name='eps', grid=vel.grid, space_order=space_order)
 eta = Function(name='eta', grid=vel.grid, space_order=space_order)
 wOverQ = Function(name='wOverQ', grid=vel.grid, space_order=space_order)
 
-b._data_with_outhalo[:] = 1.0
-f._data_with_outhalo[:] = 0.84
-vel._data_with_outhalo[:] = 1.5
-eps._data_with_outhalo[:] = 0.2
-eta._data_with_outhalo[:] = 0.4
-wOverQ._data_with_outhalo[:] = 0.0
+# b._data_with_outhalo[:] = 1.0
+# f._data_with_outhalo[:] = 0.84
+# vel._data_with_outhalo[:] = 1.5
+# eps._data_with_outhalo[:] = 0.2
+# eta._data_with_outhalo[:] = 0.4
+# wOverQ._data_with_outhalo[:] = 1.0
+b.data[:] = 1.0
+f.data[:] = 0.84
+vel.data[:] = 1.5
+eps.data[:] = 0.2
+eta.data[:] = 0.4
+wOverQ.data[:] = 1.0
 
 # theta = phi = 0
 t0 = 0.0
@@ -117,8 +123,8 @@ f = open("operator.vti_tensor.c", "w")
 print(op, file=f)
 f.close()
 
-bx = 32; by = 10; # 7502
-# bx = 16; by = 4; # 7742
+# bx = 32; by = 10; # 7502
+bx = 12; by = 4; # 7742
 
 op.apply(x0_blk0_size=bx, y0_blk0_size=by)
 
