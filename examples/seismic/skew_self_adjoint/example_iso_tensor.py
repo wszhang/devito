@@ -81,8 +81,8 @@ f = open("operator.iso_tensor.c", "w")
 print(op, file=f)
 f.close()
 
-# bx = 1; by = 1; # 7502
-bx = 1; by = 2; # 7742
+bx = 1; by = 20; # 7502
+# bx = 1; by = 2; # 7742
 
 op.apply(x0_blk0_size=bx, y0_blk0_size=by)
 
