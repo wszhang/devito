@@ -36,6 +36,10 @@ A set of more advanced examples are available in `seismic`:
   forward operator. Like `elastic`, `viscoelastic` exploits tensor functions
   for a neat and compact representation of the discretized partial differential
   equations.
+* `seismic/skew_self_adjoint`: Example implementations of a self-adjoint skew
+  symmetric pseudo- visco- acoustic operators for isotropic, VTI anisotropic, 
+  and TTI anisotropic physics. These notebooks also demonstrate unit tests
+  that prove correctness.
 
 Further:
 

@@ -70,7 +70,7 @@ class SsaIsoAcousticWaveSolver(object):
                                       space_order=self.space_order, **self._kwargs)
 
     @memoized_meth
-    def op_jac(self, save=None):
+    def op_jacfwd(self, save=None):
         """Cached operator for born runs"""
         return IsoJacobianFwdOperator(self.model, save=save, geometry=self.geometry,
                                       space_order=self.space_order, **self._kwargs)
@@ -216,7 +216,7 @@ class SsaIsoAcousticWaveSolver(object):
         kwargs.update({'dt': kwargs.pop('dt', self.dt)})
 
         # Execute operator and return wavefield and receiver data
-        summary = self.op_jac(save).apply(dm=dm, u0=u0, du=du, src=src, rec=rec, **kwargs)
+        summary = self.op_jacfwd(save).apply(dm=dm, u0=u0, du=du, src=src, rec=rec, **kwargs)
         return rec, u0, du, summary
 
     def jacobian_adjoint(self, rec, u0, b=None, vp=None, damp=None,

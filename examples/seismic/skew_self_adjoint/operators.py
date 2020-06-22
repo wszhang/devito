@@ -269,3 +269,91 @@ def IsoJacobianAdjOperator(model, geometry, space_order=8,
 
     return Operator([dm_update] + eqn + rec_term, subs=spacing_map,
                     name='IsoJacobianAdjOperator', **kwargs)
+
+
+def vti_stencil(p, s, model, **kwargs):
+    """
+    Stencil for the scalar VTI anisotropic pseudo- visco- acoustic variable density
+    skew self adjoint wave equation:
+
+    Wave equation that is implemented:
+        b/v^2 [ p.dt2 + w/Q p.dt ] = 
+            g1'[b (1 - 2 eps) g1(p)] + 
+            g2'[b (1 + 2 eps) g2(p)] + 
+            g3'[b (1 - f eta^2) g3(p) + b f eta sqrt(1 - eta^2) g3(s)] + q_p
+
+        b/v^2 [ s.dt2 + w/Q s.dt ] = 
+            g1'[b (1 - 2 eps) g1(s)] + 
+            g2'[b (1 + 2 eps) g2(s)] + 
+            g3'[b (1 - f eta^2) g3(s) + b f eta sqrt(1 - eta^2) g3(p)] + q_s
+
+        where:
+            g1, g1': 1/2 cell forward,backward shifted X derivatives 
+            g2, g2': 1/2 cell forward,backward shifted Y derivatives 
+            g3, g3': 1/2 cell forward,backward shifted Z derivatives 
+
+    See implementation notebook ssa_11_vti_implementation.ipynb for more details.
+
+    Parameters
+    ----------
+    p : TimeFunction, required
+        The quasi-P pressure wavefield computed solution.
+    s : TimeFunction, required 
+        The quasi-S pressure wavefield computed solution.
+    model : Dictionary <string>:<Function>, contains:
+        'b': Buoyancy = reciprocal density (units: m^3/kg)
+        'v': Velocity (units: m/msec or km/sec)
+        'f': pseudo-acoustic parameter f = 1 - Vs^2/Vp^2 (unitless)
+        'eps': Thomsen's weak anisotropy Epsilon (unitless)
+        'eta': SSA pseudo acoustic eta = sqrt[2(e-d)/(f-2e)] (unitless)
+        'eps': Epsilon (unitless)
+        'v': Velocity (units: m/msec or km/sec)
+        'wOverQ': The w/Q field for dissipation only attenuation.
+    forward : bool, optional
+        The propagation direction. Defaults to True.
+    q_p : TimeFunction, Function or float, optional
+        Full-space/time quasi-P source of the wave-equation.
+    q_s : TimeFunction, Function or float, optional
+        Full-space/time quasi-S source of the wave-equation.
+
+    Returns
+    ----------
+    The time update stencil.
+    """
+    # Get the Functions for buoyancy, velocity, and wOverQ
+    vp, b, wOverQ = model.vp, model.b, model.damp
+
+    # Define time step of pressure wavefield to be updated
+    forward = kwargs.get('forward', True)
+
+    if forward:
+        field_next = field.forward
+        field_prev = field.backward
+    else:
+        field_next = field.backward
+        field_prev = field.forward
+
+    # Get the source
+    q = kwargs.get('q', 0)
+
+    # Define the time update equation for 2d/3d
+    if len(field.data.shape) == 3:
+        t, x, y = field.dimensions
+        eq_time_update = (t.spacing**2 * vp**2 / b) * \
+            ((b * field.dx(x0=x+x.spacing/2)).dx(x0=x-x.spacing/2) +
+             (b * field.dy(x0=y+y.spacing/2)).dy(x0=y-y.spacing/2) + q) + \
+            (2 - t.spacing * wOverQ) * field + \
+            (t.spacing * wOverQ - 1) * field_prev
+
+    else:
+        t, x, y, z = field.dimensions
+        eq_time_update = (t.spacing**2 * vp**2 / b) * \
+            ((b * field.dx(x0=x+x.spacing/2)).dx(x0=x-x.spacing/2) +
+             (b * field.dy(x0=y+y.spacing/2)).dy(x0=y-y.spacing/2) +
+             (b * field.dz(x0=z+z.spacing/2)).dz(x0=z-z.spacing/2) + q) + \
+            (2 - t.spacing * wOverQ) * field + \
+            (t.spacing * wOverQ - 1) * field_prev
+
+    return [Eq(field_next, eq_time_update)]
+
+
