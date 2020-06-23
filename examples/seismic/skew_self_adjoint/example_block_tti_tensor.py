@@ -144,9 +144,9 @@ for bx in range(bx2, bx1, -dbx):
         s = op.apply(x0_blk0_size=bx, y0_blk0_size=by)
         if rank == 0:
             gpointss = np.sum([v.gpointss for k, v in s.items()])
-            # gpointss = np.max([v.gpointss for k, v in s.items()])
-            print("bx,by,gpts/s; %3d %3d %10.6f" % (bx, by, gpointss))
-            print("bx,by,gpts/s; %3d %3d %10.6f" % (bx, by, gpointss), file=f)
+            gflopss = np.sum([v.gflopss for k, v in s.items()])
+            print("bx,by,gpts/s,gflops; %3d %3d %10.6f %10.6f" % (bx, by, gpointss, gflopss))
+            print("bx,by,gpts/s,gflops; %3d %3d %10.6f %10.6f" % (bx, by, gpointss, gflopss), file=f)
             f.flush()
 
 f.close()
