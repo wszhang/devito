@@ -84,6 +84,10 @@ spacing_map.update({t.spacing: dt})
 op = Operator([stencil_p, src_term],
               subs=spacing_map, name='OpExampleIso')
 
+# op = Operator([stencil_p, src_term],
+#               subs=spacing_map, name='OpExampleIso',
+#               opt=('advanced-fsg', {'cire-repeats-inv': 0}))
+
 filename = "timing_iso.%s.txt" % (socket.gethostname())
 print("filename; ", filename)
 
