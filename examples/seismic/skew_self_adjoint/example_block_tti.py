@@ -130,14 +130,14 @@ dt = time_axis.step
 spacing_map = grid.spacing_map
 spacing_map.update({t.spacing: dt})
 
-op = Operator([eq_b1m2e, eq_b1mf, eq_b2epfa2, eq_bfes1ma2, eq_bfa2,
-               stencil_p, stencil_m, src_term],
-              subs=spacing_map, name='OpExampleTtiFact1')
-
 # op = Operator([eq_b1m2e, eq_b1mf, eq_b2epfa2, eq_bfes1ma2, eq_bfa2,
 #                stencil_p, stencil_m, src_term],
-#               subs=spacing_map, name='OpExampleTtiFact1',
-#               opt=('advanced-fsg', {'cire-repeats-inv': 0}))
+#               subs=spacing_map, name='OpExampleTtiFact1')
+
+op = Operator([eq_b1m2e, eq_b1mf, eq_b2epfa2, eq_bfes1ma2, eq_bfa2,
+               stencil_p, stencil_m, src_term],
+              subs=spacing_map, name='OpExampleTtiFact1',
+              opt=('advanced-fsg', {'cire-repeats-inv': 0}))
 
 filename = "timing_tti.%s.txt" % (socket.gethostname())
 print("filename; ", filename)
