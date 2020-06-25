@@ -85,7 +85,8 @@ spacing_map = vel.grid.spacing_map
 spacing_map.update({t.spacing: dt})
 
 op = Operator([update_px, update_py, update_pz, stencil_p0, src_term],
-              subs=spacing_map, name='OpExampleIsoFlatten')
+              subs=spacing_map, name='OpExampleIsoFlatten',
+              opt=('advanced', {'min-storage': True}))
 
 print(op.args)
 f = open("operator.iso_flatten.c", "w")

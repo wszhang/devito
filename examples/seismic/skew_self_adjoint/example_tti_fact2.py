@@ -128,7 +128,8 @@ spacing_map.update({t.spacing: dt})
 op = Operator([eq_b1p2e, eq_b1mf, eq_b2epfa2, eq_bfes1ma2, eq_bfa2,
                eq_pxyz, eq_mxyz, eq_p3, eq_m3, 
                stencil_p, stencil_m, src_term],
-              subs=spacing_map, name='OpExampleTtiFact2')
+              subs=spacing_map, name='OpExampleTtiFact2',
+              opt=('advanced', {'min-storage': True}))
 
 f = open("operator.tti_fact2.c", "w")
 print(op, file=f)

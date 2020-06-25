@@ -114,7 +114,8 @@ spacing_map = grid.spacing_map
 spacing_map.update({t.spacing: dt})
 
 op = Operator([stencil_p, stencil_m, src_term],
-              subs=spacing_map, name='OpExampleTti')
+              subs=spacing_map, name='OpExampleTti',
+              opt=('advanced', {'min-storage': True}))
 
 f = open("operator.tti.c", "w")
 print(op, file=f)

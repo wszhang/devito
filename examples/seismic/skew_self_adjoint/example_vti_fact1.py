@@ -111,7 +111,8 @@ spacing_map.update({t.spacing: dt})
 
 op = Operator([eq_b1mf, eq_b1p2e, eq_b1mfa2, eq_b1mfpfa2, eq_bfes1ma2,
                stencil_p_nl, stencil_m_nl, src_term],
-              subs=spacing_map, name='OpExampleVtiFact1')
+              subs=spacing_map, name='OpExampleVtiFact1',
+              opt=('advanced', {'min-storage': True}))
 
 f = open("operator.vti_fact1.c", "w")
 print(op, file=f)

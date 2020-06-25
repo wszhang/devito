@@ -75,7 +75,8 @@ spacing_map = vel.grid.spacing_map
 spacing_map.update({t.spacing: dt})
 
 op = Operator([eq_P, stencil_p, src_term],
-              subs=spacing_map, name='OpExampleIsoTensor')
+              subs=spacing_map, name='OpExampleIsoTensor',
+              opt=('advanced', {'min-storage': True}))
 
 f = open("operator.iso_tensor.c", "w")
 print(op, file=f)

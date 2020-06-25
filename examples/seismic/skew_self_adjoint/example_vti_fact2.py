@@ -118,19 +118,32 @@ dt = time_axis.step
 spacing_map = vel.grid.spacing_map
 spacing_map.update({t.spacing: dt})
 
+
+# Findings
+#   advanced-fsg reduces flops and performance for all ops
+#   {'blockinner': True} --> 3D cache blocking, no improvements
+#   {'min-storage': False} --> 15% lift for SSA VTI factorized op
+
 op = Operator([eq_b1mf, eq_b1p2e, eq_b1mfa2, eq_b1mfpfa2, eq_bfes1ma2,
                eq_px, eq_py, eq_pz, eq_mx, eq_my, eq_mz, 
                stencil_p_nl, stencil_m_nl, src_term],
-              subs=spacing_map, name='OpExampleVtiFact2')
+              subs=spacing_map, name='OpExampleVtiFact2',
+              opt=('advanced', {'min-storage': True}))
 
 f = open("operator.vti_fact2.c", "w")
 print(op, file=f)
 f.close()
 
-bx = 10; by = 5; # 7502
-# bx = 12; by = 4; # 7742
-
+bx = 8; by = 8;
 op.apply(x0_blk0_size=bx, y0_blk0_size=by)
+
+# bx = 8; by = 8; # 2D
+# bx = 8; by = 8; bz = 8; # 2D
+# bx = 8; by = 8; bz = 64; # 2D
+# bx = 8; by = 8; bz = 128; # 2D
+# bx = 8; by = 8; bz = 192; # 2D
+# bx = 8; by = 8; bz = 256; # 2D
+# op.apply(x0_blk0_size=bx, y0_blk0_size=by, z0_blk0_size=bz)
 
 print("")
 print("bx,by,norm; %3d %3d %12.6e %12.6e" % (bx, by, norm(p0), norm(m0)))

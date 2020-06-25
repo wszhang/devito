@@ -77,33 +77,24 @@ dt = time_axis.step
 spacing_map = vel.grid.spacing_map
 spacing_map.update({t.spacing: dt})
 
-op = Operator([stencil_p0, src_term],
-              subs=spacing_map, name='OpExampleIso')
+# op = Operator([stencil_p0, src_term], subs=spacing_map, name='OpExampleIso')
+
+op = Operator([stencil_p0, src_term], subs=spacing_map, name='OpExampleIso', 
+              opt=('advanced', {'min-storage': True}))
 
 f = open("operator.iso.c", "w")
 print(op, file=f)
 f.close()
 
-bx = 19; by = 8; # 7502
+# bx = 19; by = 8; # 7502
 # bx = 16; by = 5; # 7742
 
-op.apply(x0_blk0_size=bx, y0_blk0_size=by)
+bx = 16; by = 16; bz = 16 # 3D
+op.apply(x0_blk0_size=bx, y0_blk0_size=by, z0_blk0_size=bz)
 
 print("")
-print("bx,by,norm; %3d %3d %12.6e" % (bx, by, norm(p0)))
+print("bx,by,bz,norm; %3d %3d %3d %12.6e" % (bx, by, bz, norm(p0)))
 
 print("")
 print(time_axis)
 print("nx,ny,nz; %5d %5d %5d" % (shape[0], shape[1], shape[2]))
-
-# from mpi4py import MPI
-# comm = MPI.COMM_WORLD
-# rank = comm.Get_rank()
-# ranknorm = np.empty(1, np.float64)
-# sumnorm = np.empty(1, np.float64)
-# ranknorm[0] = np.linalg.norm(p0.data)**2
-# comm.Reduce(ranknorm, sumnorm, op=MPI.SUM, root=0)
-# mynorm = np.sqrt(sumnorm[0])
-# print("rank,ranknorm,sumnorm,new norm,devito norm; %2d %12.6f %12.6f %12.6f %12.6f" % 
-#       (rank, ranknorm[0], sumnorm[0], mynorm, norm(p0)))
-

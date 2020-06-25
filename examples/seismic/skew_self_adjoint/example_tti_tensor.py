@@ -122,7 +122,8 @@ spacing_map = grid.spacing_map
 spacing_map.update({t.spacing: dt})
 
 op = Operator([eq_PI, eq_MI, stencil_p, stencil_m, src_term],
-              subs=spacing_map, name='OpExampleTtiTensor')
+              subs=spacing_map, name='OpExampleTtiTensor',
+              opt=('advanced', {'min-storage': True}))
 
 f = open("operator.tti_tensor.c", "w")
 print(op, file=f)

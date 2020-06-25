@@ -117,7 +117,8 @@ spacing_map = vel.grid.spacing_map
 spacing_map.update({t.spacing: dt})
 
 op = Operator([eq_PI, eq_MI, stencil_p_nl, stencil_m_nl, src_term],
-              subs=spacing_map, name='OpExampleVtiTensor')
+              subs=spacing_map, name='OpExampleVtiTensor',
+              opt=('advanced', {'min-storage': True}))
 
 f = open("operator.vti_tensor.c", "w")
 print(op, file=f)
