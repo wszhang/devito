@@ -134,27 +134,8 @@ f = open("operator.vti_fact2.c", "w")
 print(op, file=f)
 f.close()
 
-bx = 8; by = 8;
+bx = 16; by = 8;
 op.apply(x0_blk0_size=bx, y0_blk0_size=by)
-
-# bx = 8; by = 8; # 2D
-# bx = 8; by = 8; bz = 8; # 2D
-# bx = 8; by = 8; bz = 64; # 2D
-# bx = 8; by = 8; bz = 128; # 2D
-# bx = 8; by = 8; bz = 192; # 2D
-# bx = 8; by = 8; bz = 256; # 2D
-# op.apply(x0_blk0_size=bx, y0_blk0_size=by, z0_blk0_size=bz)
 
 print("")
 print("bx,by,norm; %3d %3d %12.6e %12.6e" % (bx, by, norm(p0), norm(m0)))
-
-# from mpi4py import MPI
-# comm = MPI.COMM_WORLD
-# rank = comm.Get_rank()
-# ranknorm = np.empty(1, np.float64)
-# sumnorm = np.empty(1, np.float64)
-# ranknorm[0] = np.linalg.norm(p0.data)**2
-# comm.Reduce(ranknorm, sumnorm, op=MPI.SUM, root=0)
-# mynorm = np.sqrt(sumnorm[0])
-# print("rank,ranknorm,sumnorm,new norm,devito norm; %2d %12.6f %12.6f %12.6f %12.6f" % 
-#       (rank, ranknorm[0], sumnorm[0], mynorm, norm(p0)))

@@ -93,9 +93,7 @@ f = open("operator.iso_flatten.c", "w")
 print(op, file=f)
 f.close()
 
-bx = 19; by = 8; # 7502
-# bx = 16; by = 5; # 7742
-
+bx = 16; by = 8;
 op.apply(x0_blk0_size=bx, y0_blk0_size=by)
 
 print("")
@@ -104,7 +102,3 @@ print("bx,by,norm; %3d %3d %12.6e" % (bx, by, norm(p0)))
 print("")
 print(time_axis)
 print("nx,ny,nz; %5d %5d %5d" % (shape[0], shape[1], shape[2]))
-
-f = open("data.iso_flatten.bin", "wb")
-np.save(f, p0.data[1,:,:,:])
-f.close()

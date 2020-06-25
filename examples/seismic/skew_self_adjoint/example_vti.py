@@ -99,11 +99,6 @@ dt = time_axis.step
 spacing_map = grid.spacing_map
 spacing_map.update({t.spacing: dt})
 
-# op = Operator([stencil_p_nl, stencil_m_nl, src_term], subs=spacing_map, name='OpExampleVti')
-
-# op = Operator([stencil_p_nl, stencil_m_nl, src_term], subs=spacing_map, name='OpExampleVti',
-#               opt=('advanced', {'blockinner': True}))
-
 op = Operator([stencil_p_nl, stencil_m_nl, src_term], 
               subs=spacing_map, name='OpExampleVti',
               opt=('advanced', {'min-storage': True}))
@@ -112,16 +107,8 @@ f = open("operator.vti.c", "w")
 print(op, file=f)
 f.close()
 
-# bx = 10; by = 5; # 7502
-# bx = 12; by = 4; # 7742
-
-# bx = 8; by = 8; # 2D
-# bx = 8; by = 8; bz = 8; # 2D
-# bx = 8; by = 8; bz = 64; # 2D
-# bx = 8; by = 8; bz = 128; # 2D
-bx = 8; by = 8; bz = 192; # 2D
-# bx = 8; by = 8; bz = 256; # 2D
-op.apply(x0_blk0_size=bx, y0_blk0_size=by, z0_blk0_size=bz)
+bx = 16; by = 8;
+op.apply(x0_blk0_size=bx, y0_blk0_size=by)
 
 print("")
 print("bx,by,norm; %3d %3d %12.6e %12.6e" % (bx, by, norm(p0), norm(m0)))

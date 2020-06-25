@@ -86,11 +86,8 @@ f = open("operator.iso.c", "w")
 print(op, file=f)
 f.close()
 
-# bx = 19; by = 8; # 7502
-# bx = 16; by = 5; # 7742
-
-bx = 16; by = 16; bz = 16 # 3D
-op.apply(x0_blk0_size=bx, y0_blk0_size=by, z0_blk0_size=bz)
+bx = 16; by = 8;
+op.apply(x0_blk0_size=bx, y0_blk0_size=by)
 
 print("")
 print("bx,by,bz,norm; %3d %3d %3d %12.6e" % (bx, by, bz, norm(p0)))
