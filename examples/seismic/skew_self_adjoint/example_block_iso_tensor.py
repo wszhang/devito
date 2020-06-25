@@ -86,7 +86,8 @@ spacing_map = grid.spacing_map
 spacing_map.update({t.spacing: dt})
 
 op = Operator([eq_PI, stencil_p, src_term],
-              subs=spacing_map, name='OpExampleIsoTensor')
+              subs=spacing_map, name='OpExampleIsoTensor',
+              opt=('advanced', {'min-storage': True}))
 
 filename = "timing_iso_tensor.%s.txt" % (socket.gethostname())
 print("filename; ", filename)

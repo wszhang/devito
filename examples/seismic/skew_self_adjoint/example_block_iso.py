@@ -81,12 +81,9 @@ dt = time_axis.step
 spacing_map = grid.spacing_map
 spacing_map.update({t.spacing: dt})
 
-# op = Operator([stencil_p, src_term],
-#               subs=spacing_map, name='OpExampleIso')
-
 op = Operator([stencil_p, src_term],
               subs=spacing_map, name='OpExampleIso',
-              opt=('advanced-fsg', {'cire-repeats-inv': 0}))
+              opt=('advanced', {'min-storage': True}))
 
 filename = "timing_iso.%s.txt" % (socket.gethostname())
 print("filename; ", filename)

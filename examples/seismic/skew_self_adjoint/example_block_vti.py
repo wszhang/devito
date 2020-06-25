@@ -110,14 +110,10 @@ dt = time_axis.step
 spacing_map = grid.spacing_map
 spacing_map.update({t.spacing: dt})
 
-# op = Operator([eq_b1mf, eq_b1m2e, eq_b1mfe2, eq_b1mfpfe2, eq_bfes1me2,
-#                stencil_p, stencil_m, src_term],
-#               subs=spacing_map, name='OpExampleVti')
-
 op = Operator([eq_b1mf, eq_b1m2e, eq_b1mfe2, eq_b1mfpfe2, eq_bfes1me2,
                stencil_p, stencil_m, src_term],
               subs=spacing_map, name='OpExampleVti',
-              opt=('advanced-fsg', {'cire-repeats-inv': 0}))
+              opt=('advanced', {'min-storage': True}))
 
 filename = "timing_vti.%s.txt" % (socket.gethostname())
 print("filename; ", filename)
