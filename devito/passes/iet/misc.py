@@ -76,7 +76,7 @@ def relax_incr_dimensions(iet, **kwargs):
         <Iteration x; (x0_blk0, MIN(x_M, x0_blk0 + x0_blk0_size - 1)), 1)>
 
     """
-    '''
+
     mapper = {}
     for tree in retrieve_iteration_tree(iet):
         iterations = [i for i in tree if i.dim.is_Incr]
@@ -104,26 +104,18 @@ def relax_incr_dimensions(iet, **kwargs):
             # E.g. assume `i.symbolic_max = x0_blk0 + x0_blk0_size + 1` and
             # `i.dim.symbolic_max = x0_blk0 + x0_blk0_size - 1` then the generated
             # maximum will be `MIN(x0_blk0 + x0_blk0_size + 1, x_M + 2)`
-
-            root_max = roots_max[i.dim.root] + i.symbolic_max - i.dim.symbolic_max
-
-            try:
-                iter_max = (min(i.symbolic_max, root_max))
-                bool(iter_max)  # Can it be evaluated?
-            except TypeError:
-                iter_max = MIN(i.symbolic_max, root_max)
-
+            iter_max = i.relax(rule='classic', roots_max=roots_max)
             mapper[i] = i._rebuild(limits=(i.symbolic_min, iter_max, i.step))
 
     if mapper:
         iet = Transformer(mapper, nested=True).visit(iet)
-    '''
-    headers = [('%s(a,b)' % MIN.name, ('(((a) < (b)) ? (a) : (b))')),
-               ('%s(a,b)' % MAX.name, ('(((a) > (b)) ? (a) : (b))'))]
-    '''
+
+        headers = [('%s(a,b)' % MIN.name, ('(((a) < (b)) ? (a) : (b))')),
+                   ('%s(a,b)' % MAX.name, ('(((a) > (b)) ? (a) : (b))'))]
+
     else:
         headers = []
-    '''
+
     return iet, {'headers': headers}
 
 
